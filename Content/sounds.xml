@@ -1,0 +1,14 @@
+<sounds root="sfx/">
+	<sound name = "Stop" >
+		<sample weight="1" path="ZaWarudo.wav"/>
+	</sound>
+	<sound name = "Resume" >
+		<sample weight="1" path="ZaWarudoEnding.wav"/>
+	</sound>
+	<sound name = "Tick5" >
+		<sample weight="1" path="Ticking5.wav"/>
+	</sound>
+	<sound name = "Tick9" >
+		<sample weight="1" path="Ticking9.wav"/>
+	</sound>
+</sounds>

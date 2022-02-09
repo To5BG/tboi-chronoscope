@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <name>Updated Chronoscope (ZA WARUDO) Dev</name>
+    <directory>zawarudo</directory>
+    <id>2746615600</id>
+    <description> Take control of the world with this amazing timeless item!
+
+Gain the ability to stop time for all but yourself for a few seconds with this definately-not-a-jojo-ripoff item!
+
+This mod is an updated version of Sora's long defunct Chronoscope mod. Repentance-compatible and most old synergies (and some new additional ones) should function.
+
+The shaders and certain mechanics have also been changed. TODO for future releases: Fix familiars, laser items other than brimstone and tech, and most brimstone synergies.
+
+Obviously, huge thanks to Sora for the base code.</description>
+    <version>1.1</version>
+    <visibility>Public</visibility>
+    <tag id="Lua"/>
+    <tag id="Active Items"/>
+    <tag id="Shaders"/>
+    <tag id="Sound Effects"/>
+</metadata>

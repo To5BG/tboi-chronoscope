@@ -1,0 +1,5 @@
+<ItemPools>
+	<Pool Name="treasure">
+		<Item Name="Chronoscope" Weight="1" DecreaseBy="0.5" RemoveOn="0.01" />
+	</Pool>
+</ItemPools>

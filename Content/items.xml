@@ -1,0 +1,3 @@
+<items gfxroot="gfx/items/" version="1">
+	<active  name="Chronoscope" description="The World!" gfx="Chronoscope.png" maxcharges="4"/>
+</items>
