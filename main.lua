@@ -138,7 +138,7 @@ function TimeStop:onUpdate()
                     -- handling lasers
                     local laser = v:ToLaser()
                     local data = v:GetData()
-                    if v.Variant ~= 2 then
+                    if v.Variant == 1 then
                         if not data.Frozen and not laser:IsCircleLaser() then
                             local newLaser = player:FireBrimstone(Vector.FromAngle(laser.StartAngleDegrees))
                             newLaser.Position = laser.Position
