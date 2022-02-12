@@ -14,6 +14,24 @@ local customSfx = {
     TICK_5 = Isaac.GetSoundIdByName("Tick5"),
     TICK_9 = Isaac.GetSoundIdByName("Tick9")
 }
+local familiarHandler = {
+    ["orbital"] = function(fam)
+        local data = fam:GetData()
+        fam:AddToOrbit(data.StoredLayer)
+        fam.OrbitDistance = data.StoredDist
+        fam.OrbitSpeed = data.StoredOrbSpeed
+        data.StoredOrbSpeed = nil
+        data.StoredDist = nil
+        data.StoredLayer = nil
+    end,
+    ["delayed"] = function(fam)
+        fam:AddToDelayed()
+    end,
+    ["follower"] = function(fam)
+        fam:AddToFollowers()
+        fam:FollowParent()
+    end
+}
 
 function TimeStop:onUse()
     local player = Isaac.GetPlayer(0)
@@ -56,6 +74,12 @@ function TimeStop:onUpdate()
                     v:TakeDamage(player.Damage * v:GetData().LaserHit, DamageFlag.DAMAGE_LASER, EntityRef(player), 0)
                     v:GetData().LaserHit = nil
                 end
+                if v.Type == EntityType.ENTITY_FAMILIAR then
+                    v.Parent = player
+                    if familiarHandler[familiarVec[v.Index][2]] then
+                        familiarHandler[familiarVec[v.Index][2]](v:ToFamiliar())
+                    end
+                end
                 if v.Type == EntityType.ENTITY_TEAR then
                     local data = v:GetData()
                     if data.Frozen then
@@ -86,9 +110,28 @@ function TimeStop:onUpdate()
         game.TimeCounter = savedtime
         for i, v in pairs(entities) do
             if v.Type == EntityType.ENTITY_FAMILIAR then
-                -- TODO
-                -- freeze familiar
-                v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
+                local fam = v:ToFamiliar()
+                fam.FireCooldown = freezetime + 35
+                if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
+                    v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
+                    local familiartype = fam.OrbitDistance:Length() ~= 0.0 and "orbital" or "follower"
+                    local famdata = fam:GetData()
+                    if familiartype == "orbital" then
+                        famdata.StoredDist = fam.OrbitDistance
+                        famdata.StoredLayer = fam.OrbitLayer
+                        famdata.StoredOrbSpeed = fam.OrbitSpeed
+                        fam:RemoveFromOrbit()
+                    else
+                        fam:RemoveFromFollowers()
+                    end
+                    fam:RemoveFromDelayed()
+                    familiarVec[v.Index] = { v.Position, familiartype }
+                else
+                    v.Position = familiarVec[v.Index][1]
+                    v.Velocity = Vector(0, 0)
+                    v.Target = nil
+                    v.Parent = nil
+                end
             elseif v.Type ~= EntityType.ENTITY_PLAYER then
                 if v.Type ~= EntityType.ENTITY_PROJECTILE then
                     if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
