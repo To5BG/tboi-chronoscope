@@ -55,6 +55,8 @@ function TimeStop:onUpdate()
     if room ~= Game():GetLevel():GetCurrentRoomIndex() then
         --reset when leaving room
         freezetime = 0
+    end
+    if freezetime == 0 then
         for s, v in pairs(customSfx) do
             sfx:Stop(v)
         end
@@ -282,15 +284,10 @@ function TimeStop:onShader(name)
             music:Resume()
         end
 
-        local params = {
+        return {
             DistortionScale = dist,
             DistortionOn = on
         }
-        if shaderAPI then
-            shaderAPI.Shader("ZaWarudo", params)
-        else
-            return params
-        end
     end
 end
 
@@ -349,6 +346,10 @@ function TimeStop:onTearUpdate_Nail(tear)
     end
 end
 
+function TimeStop:onPlayerInIt()
+    freezetime = 0
+end
+
 TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE, TimeStop.onTearUpdate)
 TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE, TimeStop.onTearUpdate_Nail, TearVariant.NAIL)
 TimeStop:AddCallback(ModCallbacks.MC_POST_PROJECTILE_UPDATE, TimeStop.onProjectileUpdate)
@@ -356,3 +357,4 @@ TimeStop:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, TimeStop.onShader)
 TimeStop:AddCallback(ModCallbacks.MC_USE_ITEM, TimeStop.onUse, item)
 TimeStop:AddCallback(ModCallbacks.MC_POST_UPDATE, TimeStop.onUpdate)
 TimeStop:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, TimeStop.onDamage)
+TimeStop:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, TimeStop.onPlayerInIt)
