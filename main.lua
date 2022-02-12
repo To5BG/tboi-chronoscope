@@ -94,7 +94,9 @@ function TimeStop:onUpdate()
                     if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                         v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
                         v:AddEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
-                        v:AddEntityFlags(EntityFlag.FLAG_NO_SPRITE_UPDATE)
+                        if v:IsBoss() then
+                            v:AddEntityFlags(EntityFlag.FLAG_NO_SPRITE_UPDATE)
+                        end
                     end
                 end
                 if v.Type == EntityType.ENTITY_TEAR then
