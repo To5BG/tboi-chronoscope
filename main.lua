@@ -6,9 +6,8 @@ local savedtime = 0
 local freezetime = 0
 local room = -1
 local item = Isaac.GetItemIdByName("Chronoscope")
-local zeroV = Vector(0, 0)
-local randomV = Vector(0, 0)
-
+local BrimKnifeRandomV = Vector(0, 0)
+local familiarVec = { }
 local customSfx = {
     STOP_TIME = Isaac.GetSoundIdByName("Stop"),
     RESUME_TIME = Isaac.GetSoundIdByName("Resume"),
@@ -81,7 +80,7 @@ function TimeStop:onUpdate()
                 end
             end
         end
-        freezetime = freezetime - 1
+        freezetime = 0
     elseif freezetime > 1 then
         -- while on effect
         game.TimeCounter = savedtime
@@ -121,7 +120,7 @@ function TimeStop:onUpdate()
                         end
                     else
                         local tear = v:ToTear()
-                        v.Velocity = zeroV
+                        v.Velocity = Vector(0, 0)
                         if tear:GetData().Knife then
                             tear.SpriteRotation = data.StoredVel:GetAngleDegrees() + 90
                         end
@@ -132,7 +131,7 @@ function TimeStop:onUpdate()
                     -- handling bombs
                     bomb = v:ToBomb()
                     bomb:SetExplosionCountdown(2)
-                    bomb.Velocity = zeroV
+                    bomb.Velocity = Vector(0, 0)
                 elseif v.Type == EntityType.ENTITY_LASER then
                     -- handling lasers
                     local laser = v:ToLaser()
@@ -166,7 +165,7 @@ function TimeStop:onUpdate()
                             offset2 = math.random(-300, 300) / 1000
                         end
                         for i = 1, number do
-                            local newKnife = player:FireTear(knife.Position, zeroV, false, true, false)
+                            local newKnife = player:FireTear(knife.Position, Vector(0, 0), false, true, false)
                             local newData = newKnife:GetData()
                             newData.Knife = true
                             newKnife.TearFlags = player.TearFlags
@@ -175,9 +174,9 @@ function TimeStop:onUpdate()
                             newKnife.FallingAcceleration = -0.1
                             newKnife.FallingSpeed = 0
                             newKnife.Height = -10
-                            randomV.X = 0
-                            randomV.Y = 1 + offset2
-                            newKnife.Velocity = randomV:Rotated(knife.Rotation - 90 + offset) * 15
+                            BrimKnifeRandomV.X = 0
+                            BrimKnifeRandomV.Y = 1 + offset2
+                            newKnife.Velocity = BrimKnifeRandomV:Rotated(knife.Rotation - 90 + offset) * 15
                                     * player.ShotSpeed * math.random(75, 125) / 100.0
                             newKnife.CollisionDamage = 18 * knife.Charge * (player.Damage)
                             newKnife.GridCollisionClass = GridCollisionClass.COLLISION_WALL
@@ -264,7 +263,7 @@ function TimeStop:onProjectileUpdate(tear)
             data.StoredFallingSpeed = tear.FallingSpeed
             data.StoredAccel = tear.FallingAccel
         else
-            tear.Velocity = zeroV
+            tear.Velocity = Vector(0, 0)
             tear.FallingAccel = -0.1
             tear.FallingSpeed = 0
         end
