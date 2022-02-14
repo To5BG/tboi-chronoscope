@@ -57,6 +57,27 @@ if EID then
             "#{{Collectible356}} Increases the duration of stopped time to 9 seconds", _, "en_us_detailed")
 end
 
+if Encyclopedia then
+    Encyclopedia.AddItem({
+        ID = item,
+        WikiDesc = {
+            Encyclopedia.EIDtoWiki(detailed_desc)[1],
+            {
+                { str = "Interactions", fsize = 2, clr = 3, halign = 0 },
+                { str = "Car Battery: Increases the duration of stopped time to 9 seconds" }
+            },
+            {
+                { str = "Trivia", fsize = 2, clr = 3, halign = 0 },
+                { str = "Definitely not a jojo reference." }
+            }
+        },
+        Pools = {
+            Encyclopedia.ItemPools.POOL_TREASURE
+        },
+        ModName = "Updated Chronoscope (ZA WARUDO)"
+    })
+end
+
 if ModConfigMenu then
 
     local effectVariants = { "Dio", "Jotaro", "Diego" }
