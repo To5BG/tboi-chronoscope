@@ -350,6 +350,13 @@ function TimeStop:onPlayerInIt()
     freezetime = 0
 end
 
+function TimeStop:onGameExit()
+    for _, v in pairs(customSfx) do
+        sfx:Stop(v)
+    end
+end
+
+TimeStop:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, TimeStop.onGameExit)
 TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE, TimeStop.onTearUpdate)
 TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE, TimeStop.onTearUpdate_Nail, TearVariant.NAIL)
 TimeStop:AddCallback(ModCallbacks.MC_POST_PROJECTILE_UPDATE, TimeStop.onProjectileUpdate)
