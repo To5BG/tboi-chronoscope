@@ -1,14 +1,56 @@
 <sounds root="sfx/">
-	<sound name = "Stop" >
-		<sample weight="1" path="ZaWarudo.wav"/>
+	<sound name = "StopDio" >
+		<sample weight="1" path="ZaWarudoDio.wav"/>
 	</sound>
-	<sound name = "Resume" >
-		<sample weight="1" path="ZaWarudoEnding.wav"/>
+	<sound name = "ResumeDio" >
+		<sample weight="1" path="ZaWarudoEndingDio.wav"/>
+	</sound>
+	<sound name = "StopDiego" >
+		<sample weight="1" path="ZaWarudoDiego.wav"/>
+	</sound>
+	<sound name = "ResumeDiego" >
+		<sample weight="1" path="ZaWarudoEndingDiego.wav"/>
+	</sound>
+	<sound name = "StopJotaro" >
+		<sample weight="1" path="ZaWarudoJotaro.wav"/>
+	</sound>
+	<sound name = "ResumeJotaro" >
+		<sample weight="1" path="ZaWarudoEndingJotaro.wav"/>
 	</sound>
 	<sound name = "Tick5" >
 		<sample weight="1" path="Ticking5.wav"/>
 	</sound>
 	<sound name = "Tick9" >
 		<sample weight="1" path="Ticking9.wav"/>
+	</sound>
+	<sound name = "DioIntro1" >
+		<sample weight="1" path="DioIntro1.wav"/>
+	</sound>
+	<sound name = "DioIntro2" >
+		<sample weight="1" path="DioIntro2.wav"/>
+	</sound>
+	<sound name = "DioIntro3" >
+		<sample weight="1" path="DioIntro3.wav"/>
+	</sound>
+	<sound name = "DioIntro4" >
+		<sample weight="1" path="DioIntro4.wav"/>
+	</sound>
+	<sound name = "DiegoIntro1" >
+		<sample weight="1" path="DiegoIntro1.wav"/>
+	</sound>
+	<sound name = "DiegoIntro2" >
+		<sample weight="1" path="DiegoIntro2.wav"/>
+	</sound>
+	<sound name = "DiegoIntro3" >
+		<sample weight="1" path="DiegoIntro3.wav"/>
+	</sound>
+	<sound name = "DiegoIntro4" >
+		<sample weight="1" path="DiegoIntro4.wav"/>
+	</sound>
+	<sound name = "JotaroIntro1" >
+		<sample weight="1" path="JotaroIntro1.wav"/>
+	</sound>
+	<sound name = "JotaroIntro2" >
+		<sample weight="1" path="JotaroIntro2.wav"/>
 	</sound>
 </sounds>
