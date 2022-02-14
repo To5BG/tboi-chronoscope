@@ -10,16 +10,78 @@ local item = Isaac.GetItemIdByName("Chronoscope")
 local BrimKnifeRandomV = Vector(0, 0)
 local familiarVec = { }
 local customSfx = {
-    STOP_TIME = Isaac.GetSoundIdByName("Stop"),
-    RESUME_TIME = Isaac.GetSoundIdByName("Resume"),
+    STOP_TIME_DIO = Isaac.GetSoundIdByName("StopDio"),
+    RESUME_TIME_DIO = Isaac.GetSoundIdByName("ResumeDio"),
+    STOP_TIME_JOTARO = Isaac.GetSoundIdByName("StopJotaro"),
+    RESUME_TIME_JOTARO = Isaac.GetSoundIdByName("ResumeJotaro"),
+    STOP_TIME_DIEGO = Isaac.GetSoundIdByName("StopDiego"),
+    RESUME_TIME_DIEGO = Isaac.GetSoundIdByName("ResumeDiego"),
     TICK_5 = Isaac.GetSoundIdByName("Tick5"),
     TICK_9 = Isaac.GetSoundIdByName("Tick9")
 }
+local voiceSfxDio = {
+    Isaac.GetSoundIdByName("DioIntro1"),
+    Isaac.GetSoundIdByName("DioIntro2"),
+    Isaac.GetSoundIdByName("DioIntro3"),
+    Isaac.GetSoundIdByName("DioIntro4")
+}
+local voiceSfxJotaro = {
+    Isaac.GetSoundIdByName("JotaroIntro1"),
+    Isaac.GetSoundIdByName("JotaroIntro2")
+}
+local voiceSfxDiego = {
+    Isaac.GetSoundIdByName("DiegoIntro1"),
+    Isaac.GetSoundIdByName("DiegoIntro2"),
+    Isaac.GetSoundIdByName("DiegoIntro3"),
+    Isaac.GetSoundIdByName("DiegoIntro4")
+}
+-- default values
 local effectVariant = "Dio"
 local voiceOver = false
 
 local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
 local longWindup = false
+local maxTime = 0
+---------------------------------------------------------------------------
+------------------------------HANDLERS-------------------------------------
+
+local startingSfxHandler = {
+    ["Dio"] = function()
+        if voiceOver then
+            local idx = math.random(4)
+            longWindup = idx == 2 or idx == 3
+            sfx:Play(voiceSfxDio[idx], 1, 0, false, 1, 0)
+        end
+        if not longWindup then
+            sfx:Play(customSfx.STOP_TIME_DIO, 2, 0, false, 1, 0)
+        end
+    end,
+    ["Jotaro"] = function()
+        if voiceOver then
+            sfx:Play(voiceSfxJotaro[math.random(2)], 1, 0, false, 1, 0)
+        end
+        sfx:Play(customSfx.STOP_TIME_JOTARO, 1, 0, false, 1, 0)
+    end,
+    ["Diego"] = function()
+        if voiceOver then
+            sfx:Play(voiceSfxDiego[math.random(4)], 2, 0, false, 1, 0)
+        end
+        sfx:Play(customSfx.STOP_TIME_DIEGO, 1.25, 0, false, 1, 0)
+    end
+}
+
+local finishingSfxHandler = {
+    ["Dio"] = function()
+        sfx:Play(customSfx.RESUME_TIME_DIO, 2, 0, false, 1, 0)
+    end,
+    ["Jotaro"] = function()
+        sfx:Play(customSfx.RESUME_TIME_JOTARO, 3, 0, false, 1, 0)
+    end,
+    ["Diego"] = function()
+        sfx:Play(customSfx.RESUME_TIME_DIEGO, 1, 0, false, 0.925, 0)
+    end
+}
+
 local familiarHandler = {
     ["orbital"] = function(fam)
         local data = fam:GetData()
@@ -38,10 +100,8 @@ local familiarHandler = {
         fam:FollowParent()
     end
 }
-
 ---------------------------------------------------------------------------
 -----------------------------MOD SUPPORT-----------------------------------
-
 local desc = "# Halts the flow of time for what feels like 5 seconds" ..
         "# The player can interact with other objects, move, and shoot freely during stopped time, " ..
         "while also being immune to most damage" ..
@@ -141,12 +201,15 @@ function SaveConfig()
         TimeStop:SaveData(json.encode({ voiceOver = voiceOver, effectVariant = effectVariant }))
     end
 end
-
 ---------------------------------------------------------------------------
 -------------------------CALLBACK FUNCTIONS--------------------------------
-
+function TimeStop:onUse(_, _, _, flags)
+    if flags & UseFlag.USE_CARBATTERY ~= 0 then
+        return false
+    end
     local player = Isaac.GetPlayer(0)
     room = Game():GetLevel():GetCurrentRoomIndex()
+    startingSfxHandler[effectVariant]()
     if player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
         if longWindup then
             freezetime = 410
@@ -397,14 +460,14 @@ function TimeStop:onShader(name)
         -- in case of skipped frames
         if maxTime - freezetime < 2 and maxTime - freezetime > 0 then
             player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
-        elseif freezetime == 320 then
+        elseif freezetime == 320 and player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
             player:AnimateCollectible(item, "HideItem", "PlayerPickup")
-            sfx:Play(customSfx.TICK_9, 5, 0, false, 1)
+            sfx:Play(customSfx.TICK_9, 5, 0, false, 1, 0)
         elseif freezetime == 200 and not player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
             player:AnimateCollectible(item, "HideItem", "PlayerPickup")
-            sfx:Play(customSfx.TICK_5, 5, 0, false, 1)
-        elseif freezetime == 40 then
-            sfx:Play(customSfx.RESUME_TIME, 2, 0, false, 1)
+            sfx:Play(customSfx.TICK_5, 5, 0, false, 1, 0)
+        elseif freezetime == outroTimeMarker then
+            finishingSfxHandler[effectVariant]()
         elseif freezetime == 0 then
             music:Resume()
         end
