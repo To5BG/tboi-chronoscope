@@ -42,6 +42,21 @@ local familiarHandler = {
 ---------------------------------------------------------------------------
 -----------------------------MOD SUPPORT-----------------------------------
 
+local desc = "# Halts the flow of time for what feels like 5 seconds" ..
+        "# The player can interact with other objects, move, and shoot freely during stopped time, " ..
+        "while also being immune to most damage" ..
+        "# All other enemies, familiars, and projectiles stay frozen in place" ..
+        "# Explosions are halted, and bombs explode after time resumes"
+-- Unknown prevalence of en_us_detailed
+local detailed_desc = desc
+
+if EID then
+    EID:addCollectible(item, desc ..
+            "#{{Collectible356}} Increases the duration of stopped time to 9 seconds", _, "en_us")
+    EID:addCollectible(item, detailed_desc ..
+            "#{{Collectible356}} Increases the duration of stopped time to 9 seconds", _, "en_us_detailed")
+end
+
 if ModConfigMenu then
 
     local effectVariants = { "Dio", "Jotaro", "Diego" }
