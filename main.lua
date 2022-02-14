@@ -37,16 +37,25 @@ function TimeStop:onUse()
     local player = Isaac.GetPlayer(0)
     room = Game():GetLevel():GetCurrentRoomIndex()
     if player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
-        freezetime = 380
-        player:AddControlsCooldown(60)
+        if longWindup then
+            freezetime = 410
+            player:AddControlsCooldown(180)
+        else
+            freezetime = 380
+            player:AddControlsCooldown(120)
+        end
     else
-        freezetime = 260
-        player:AddControlsCooldown(120)
+        if longWindup then
+            freezetime = 290
+            player:AddControlsCooldown(180)
+        else
+            freezetime = 260
+            player:AddControlsCooldown(120)
+        end
     end
-    sfx:Play(customSfx.STOP_TIME, 2, 0, false, 1)
     savedtime = game.TimeCounter
     music:Pause()
-    return true
+    return not longWindup
 end
 
 function TimeStop:onUpdate()
@@ -55,9 +64,7 @@ function TimeStop:onUpdate()
     if room ~= Game():GetLevel():GetCurrentRoomIndex() then
         --reset when leaving room
         freezetime = 0
-    end
-    if freezetime == 0 then
-        for s, v in pairs(customSfx) do
+        for _, v in pairs(customSfx) do
             sfx:Stop(v)
         end
     end
@@ -115,6 +122,9 @@ function TimeStop:onUpdate()
                 local fam = v:ToFamiliar()
                 fam.FireCooldown = freezetime + 35
                 if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
+                    if longWindup and maxTime - freezetime < 0 then
+                        return
+                    end
                     v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
                     local familiartype = fam.OrbitDistance:Length() ~= 0.0 and "orbital" or "follower"
                     local famdata = fam:GetData()
@@ -268,7 +278,10 @@ function TimeStop:onShader(name)
         else
             on = 0.5 - 0.0125 * math.max(40 - freezetime, 0)
         end
-
+        -- long windup
+        if longWindup and maxTime - freezetime < 0 then
+            dist = 0
+        end
         -- in case of skipped frames
         if maxTime - freezetime < 2 then
             player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
