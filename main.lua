@@ -1,7 +1,8 @@
-TimeStop = RegisterMod("ZaWarudo", 1)
+local TimeStop = RegisterMod("ZaWarudo", 1)
 local game = Game()
 local sfx = SFXManager()
 local music = MusicManager()
+local json = require("json")
 local savedtime = 0
 local freezetime = 0
 local room = -1
@@ -14,6 +15,11 @@ local customSfx = {
     TICK_5 = Isaac.GetSoundIdByName("Tick5"),
     TICK_9 = Isaac.GetSoundIdByName("Tick9")
 }
+local effectVariant = "Dio"
+local voiceOver = false
+
+local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
+local longWindup = false
 local familiarHandler = {
     ["orbital"] = function(fam)
         local data = fam:GetData()
@@ -33,7 +39,76 @@ local familiarHandler = {
     end
 }
 
-function TimeStop:onUse()
+---------------------------------------------------------------------------
+-----------------------------MOD SUPPORT-----------------------------------
+
+if ModConfigMenu then
+
+    local effectVariants = { "Dio", "Jotaro", "Diego" }
+    ModConfigMenu.AddSetting(
+            "Updated Chronoscope",
+            "General",
+            {
+                Type = ModConfigMenu.OptionType.NUMBER,
+                CurrentSetting = function()
+                    local idx = 0
+                    for i, v in ipairs(effectVariants) do
+                        if v == effectVariant then
+                            idx = i
+                            break
+                        end
+                    end
+                    return idx
+                end,
+                Minimum = 1,
+                Maximum = 3,
+                Display = function()
+                    return "Sound effect variant: " .. effectVariant
+                end,
+                OnChange = function(val)
+                    effectVariant = effectVariants[val]
+                    outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
+                    longWindup = false
+                    SaveConfig()
+                end,
+                Info = function()
+                    return { "Changes time stop sound effect. Based on all JoJo characters with that ability." }
+                end
+            }
+    )
+    ModConfigMenu.AddSetting(
+            "Updated Chronoscope",
+            "General",
+            {
+                Type = ModConfigMenu.OptionType.BOOLEAN,
+                CurrentSetting = function()
+                    return voiceOver
+                end,
+                Display = function()
+                    local booleanval = voiceOver and "True" or "False"
+                    return "Voice over enabled: " .. booleanval
+                end,
+                OnChange = function(val)
+                    voiceOver = val
+                    longWindup = false
+                    SaveConfig()
+                end,
+                Info = function()
+                    return { "Enables character voice overs." }
+                end
+            }
+    )
+end
+
+function SaveConfig()
+    if ModConfigMenu then
+        TimeStop:SaveData(json.encode({ voiceOver = voiceOver, effectVariant = effectVariant }))
+    end
+end
+
+---------------------------------------------------------------------------
+-------------------------CALLBACK FUNCTIONS--------------------------------
+
     local player = Isaac.GetPlayer(0)
     room = Game():GetLevel():GetCurrentRoomIndex()
     if player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
@@ -70,7 +145,7 @@ function TimeStop:onUpdate()
     end
     if freezetime == 1 then
         --restore tear attributes
-        for i, v in pairs(entities) do
+        for _, v in pairs(entities) do
             if v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                 v:ClearEntityFlags(EntityFlag.FLAG_FREEZE)
                 v:ClearEntityFlags(EntityFlag.FLAG_NO_SPRITE_UPDATE)
@@ -117,7 +192,7 @@ function TimeStop:onUpdate()
     elseif freezetime > 1 then
         -- while on effect
         game.TimeCounter = savedtime
-        for i, v in pairs(entities) do
+        for _, v in pairs(entities) do
             if v.Type == EntityType.ENTITY_FAMILIAR then
                 local fam = v:ToFamiliar()
                 fam.FireCooldown = freezetime + 35
@@ -217,11 +292,12 @@ function TimeStop:onUpdate()
                         local offset = 0
                         local offset2 = 0
                         if player:HasCollectible(CollectibleType.COLLECTIBLE_BRIMSTONE) then
-                            number = math.random(3 + knife.Charge * 3, 4 + knife.Charge * 4)
+                            number = math.random(3 + math.floor(knife.Charge * 3),
+                                    4 + math.floor(4 + knife.Charge * 4))
                             offset = math.random(-150, 150) / 10
                             offset2 = math.random(-300, 300) / 1000
                         end
-                        for i = 1, number do
+                        for _ = 1, number do
                             local newKnife = player:FireTear(knife.Position, Vector(0, 0), false, true, false)
                             local newData = newKnife:GetData()
                             newData.Knife = true
@@ -276,14 +352,14 @@ function TimeStop:onShader(name)
         if dist < 0 or freezetime == 0 then
             dist = math.abs(dist) ^ 2
         else
-            on = 0.5 - 0.0125 * math.max(40 - freezetime, 0)
+            on = 0.5 - 0.5 * math.max(outroTimeMarker - freezetime, 0) / outroTimeMarker
         end
         -- long windup
         if longWindup and maxTime - freezetime < 0 then
             dist = 0
         end
         -- in case of skipped frames
-        if maxTime - freezetime < 2 then
+        if maxTime - freezetime < 2 and maxTime - freezetime > 0 then
             player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
         elseif freezetime == 320 then
             player:AnimateCollectible(item, "HideItem", "PlayerPickup")
@@ -325,7 +401,7 @@ function TimeStop:onProjectileUpdate(tear)
     end
 end
 
-function TimeStop:onDamage(target, amount, flags, source, countdown)
+function TimeStop:onDamage(target, _, flags, source, _)
     if freezetime > 0 and target.Type == EntityType.ENTITY_PLAYER and flags & DamageFlag.DAMAGE_POISON_BURN == 0
             and flags & DamageFlag.DAMAGE_FIRE == 0 and flags & DamageFlag.DAMAGE_CURSED_DOOR == 0 then
         return false
@@ -359,8 +435,14 @@ function TimeStop:onTearUpdate_Nail(tear)
     end
 end
 
-function TimeStop:onPlayerInIt()
+function TimeStop:onGameStarted()
     freezetime = 0
+    if ModConfigMenu and TimeStop:HasData() then
+        local config = json.decode(TimeStop:LoadData())
+        voiceOver = config.voiceOver
+        effectVariant = config.effectVariant
+        outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
+    end
 end
 
 function TimeStop:onGameExit()
@@ -377,4 +459,4 @@ TimeStop:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, TimeStop.onShader)
 TimeStop:AddCallback(ModCallbacks.MC_USE_ITEM, TimeStop.onUse, item)
 TimeStop:AddCallback(ModCallbacks.MC_POST_UPDATE, TimeStop.onUpdate)
 TimeStop:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, TimeStop.onDamage)
-TimeStop:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, TimeStop.onPlayerInIt)
+TimeStop:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, TimeStop.onGameStarted)
