@@ -1,3 +1,5 @@
+[![Steam Downloads](https://img.shields.io/steam/downloads/2746615600?color=blue&label=Downloads&logo=steam&logoColor=white)](https://steamcommunity.com/sharedfiles/filedetails/?id=2746615600)
+
 # Description
 
 Take control of the world with this amazing timeless item!  
