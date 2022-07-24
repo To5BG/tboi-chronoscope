@@ -41,7 +41,8 @@ local voiceOver = false
 
 local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
 local longWindup = false
-local maxTime = 0
+local maxTime = 260
+local useOldShader = false
 ---------------------------------------------------------------------------
 ------------------------------HANDLERS-------------------------------------
 
@@ -435,21 +436,7 @@ function TimeStop:onUpdate()
 end
 
 function TimeStop:onShader(name)
-    if name == "ZaWarudo" then
-        local player = Isaac.GetPlayer(0)
-        maxTime = player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) and 380 or 260
-
-        --[[ -- copy fade-in effect for fade-out
-        local dist = 1 / (maxTime - 12 - freezetime) + 1 / (freezetime - 2)
-        local on = 0
-        if dist < 0 then
-            dist = math.abs(dist) ^ 2
-        elseif freezetime == 2 or maxTime - 12 - freezetime == 0 then
-            dist = 1
-        else
-            on = 0.5
-        end
-        --]]
+    if name == "ZaWarudoClassic" then
 
         local dist = 10 / (maxTime - 12 - freezetime) -- transition factor
         local on = 0 -- dullness factor
@@ -479,8 +466,30 @@ function TimeStop:onShader(name)
         end
 
         return {
+            Enabled = useOldShader and 1 or 0,
             DistortionScale = dist,
             DistortionOn = on
+        }
+    elseif name == "ZaWarudo" then
+        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(0).Position)
+        local diff = maxTime - freezetime
+        local t = (freezetime == 0 or diff <= 5) and 100 or diff - 5
+
+        -- first wave
+        if diff < 12 then t = t / 10.0
+            -- second wave
+        elseif diff < 40 then t = (t - 6) / 20.0
+            -- third (incoming) wave
+        elseif diff < 60 then t = (56 - t) / 15.0
+        end
+
+        return {
+            Enabled = (not useOldShader) and 1 or 0,
+            Time = t,
+            PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
+            Depth = 8.0,
+            Thickness = t * 3.5,
+            Reach = 0.1
         }
     end
 end
