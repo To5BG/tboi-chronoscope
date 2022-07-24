@@ -211,28 +211,23 @@ function TimeStop:onUse(_, _, _, flags)
     room = Game():GetLevel():GetCurrentRoomIndex()
     startingSfxHandler[effectVariant]()
     if player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
-        if longWindup then
-            freezetime = 410
-            player:AddControlsCooldown(180)
-        else
-            freezetime = 380
-            player:AddControlsCooldown(120)
-        end
+        if longWindup then freezetime = 410
+        else freezetime = 380 end
     else
-        if longWindup then
-            freezetime = 290
-            player:AddControlsCooldown(180)
-        else
-            freezetime = 260
-            player:AddControlsCooldown(120)
-        end
+        if longWindup then freezetime = 290
+        else freezetime = 260 end
     end
     savedtime = game.TimeCounter
     music:Pause()
-    return not longWindup
+
+    player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
+    player:AddControlsCooldown(longWindup and 185 or 125)
+    return false
 end
 
 function TimeStop:onUpdate()
+    if freezetime == 0 then return end
+
     local player = Isaac.GetPlayer(0)
     local entities = Isaac.GetRoomEntities()
     if room ~= Game():GetLevel():GetCurrentRoomIndex() then
@@ -242,6 +237,20 @@ function TimeStop:onUpdate()
             sfx:Stop(v)
         end
     end
+
+    -- in case of skipped frames
+    if freezetime == 320 and player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
+        player:AnimateCollectible(item, "HideItem", "PlayerPickup")
+        sfx:Play(customSfx.TICK_9, 5, 0, false, 1, 0)
+    elseif freezetime == 200 and not player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
+        player:AnimateCollectible(item, "HideItem", "PlayerPickup")
+        sfx:Play(customSfx.TICK_5, 5, 0, false, 1, 0)
+    elseif freezetime == outroTimeMarker then
+        finishingSfxHandler[effectVariant]()
+    elseif freezetime == 0 then
+        music:Resume()
+    end
+
     if freezetime == 1 then
         --restore tear attributes
         for _, v in pairs(entities) do
@@ -287,8 +296,7 @@ function TimeStop:onUpdate()
                 end
             end
         end
-        freezetime = 0
-    elseif freezetime > 1 then
+    elseif freezetime > 1 --[[and (not longWindup or (maxTime - freezetime >= 0))--]] then
         -- while on effect
         game.TimeCounter = savedtime
         for _, v in pairs(entities) do
@@ -357,7 +365,7 @@ function TimeStop:onUpdate()
                     end
                 elseif v.Type == EntityType.ENTITY_BOMBDROP then
                     -- handling bombs
-                    bomb = v:ToBomb()
+                    local bomb = v:ToBomb()
                     bomb:SetExplosionCountdown(2)
                     bomb.Velocity = Vector(0, 0)
                 elseif v.Type == EntityType.ENTITY_LASER then
@@ -422,8 +430,8 @@ function TimeStop:onUpdate()
                 end
             end
         end
-        freezetime = math.max(0, freezetime - 1)
     end
+    freezetime = math.max(0, freezetime - 1)
 end
 
 function TimeStop:onShader(name)
@@ -450,6 +458,7 @@ function TimeStop:onShader(name)
         else
             on = 0.5 - 0.5 * math.max(outroTimeMarker - freezetime, 0) / outroTimeMarker
         end
+
         -- long windup
         if longWindup and maxTime - freezetime < 0 then
             dist = 0
@@ -547,6 +556,11 @@ function TimeStop:onGameExit()
     end
 end
 
+function TimeStop:onCacheEval(ent)
+    maxTime = ent:HasCollectible(Isaac.GetItemIdByName("Car Battery")) and 380 or 260
+end
+
+TimeStop:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, TimeStop.onCacheEval)
 TimeStop:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, TimeStop.onGameExit)
 TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE, TimeStop.onTearUpdate)
 TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE, TimeStop.onTearUpdate_Nail, TearVariant.NAIL)
