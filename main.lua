@@ -505,6 +505,19 @@ function TimeStop:onShader(name)
             PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
             Strength = s
         }
+
+    elseif name == "ZaWarudoZoom" then
+        local diff = maxTime - freezetime
+        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(0).Position)
+        local z = 1
+        if diff < 10 and diff > 5 then z = 1 - (diff - 5) * 0.02
+        elseif diff < 60 then z = 0.9 end
+
+        return {
+            Enabled = (freezetime ~= 0 and diff < 60) and 1 or 0,
+            PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
+            Zoom = z
+        }
     end
 end
 
