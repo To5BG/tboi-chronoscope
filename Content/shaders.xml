@@ -241,4 +241,84 @@
             }
 		]]></fragment>
     </shader>
+    <shader name="ZaWarudoBlur">
+        <parameters>
+            <param name="Enabled" type="float"/>
+            <param name="Strength" type="float"/>
+            <param name="PlayerPos" type="vec2"/>
+        </parameters>
+        <vertex><![CDATA[
+			attribute vec3 Position;
+			attribute vec4 Color;
+			attribute vec2 TexCoord;
+			attribute vec4 RenderData;
+			attribute float Scale;
+			attribute float Enabled;
+			attribute float Strength;
+			attribute vec2 PlayerPos;
+			varying vec4 Color0;
+			varying vec2 TexCoord0;
+			varying lowp vec4 RenderDataOut;
+			varying float ScaleOut;
+			varying float EnabledOut;
+			varying float StrengthOut;
+			varying vec2 PlayerPosOut;
+			uniform mat4 Transform;
+
+			void main(void)
+			{
+				RenderDataOut = RenderData;
+				ScaleOut = Scale;
+				Color0 = Color;
+				TexCoord0 = TexCoord;
+				// passing args
+				EnabledOut = Enabled;
+				StrengthOut = Strength;
+				PlayerPosOut = PlayerPos;
+
+				gl_Position = Transform * vec4(Position.xyz, 1.0);
+			}
+		]]></vertex>
+        <fragment><![CDATA[
+			varying lowp vec4 Color0;
+			varying mediump vec2 TexCoord0;
+			varying lowp vec4 RenderDataOut;
+			varying lowp float ScaleOut;
+			varying lowp float EnabledOut;
+			varying lowp float StrengthOut;
+			varying lowp vec2 PlayerPosOut;
+			uniform sampler2D Texture0;
+
+			void main(void)
+            {
+                vec4 Color = texture2D(Texture0, TexCoord0);
+
+                if (EnabledOut != 0)
+                {
+                    vec2 center = PlayerPosOut;
+                    vec2 uv = gl_FragCoord / RenderDataOut.xy;
+
+                    float ratio = RenderDataOut.y / RenderDataOut.x;
+                    uv.y *= ratio;
+                    center.y *= ratio;
+
+                    float dist = distance(uv, center);
+
+                    if (dist > 0.1)
+                    {
+                        vec2 dir = (uv - center);
+                        Color = vec4(0.);
+
+                        for (float i = 0; i < 64.; i++)
+                        {
+                            Color += texture(Texture0, TexCoord0 +
+                            i / 64. * dir * StrengthOut * 0.005 * dist);
+                        }
+                        Color /= 64.;
+                    }
+                }
+                gl_FragColor = Color0 * Color;
+            }
+		]]></fragment>
+    </shader>
 </shaders>

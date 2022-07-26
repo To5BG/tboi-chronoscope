@@ -491,6 +491,20 @@ function TimeStop:onShader(name)
             GreyScale = gscale,
             Distort = t * shaderDisfactor / 16
         }
+
+    elseif name == "ZaWarudoBlur" then
+        local diff = maxTime - freezetime
+        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(0).Position)
+        local s = 0
+        if diff < 10 then s = diff * 3
+        elseif diff < 40 then s = 30
+        else s = math.max(0, 60 - diff) end
+
+        return {
+            Enabled = (not useOldShader and freezetime ~= 0 and diff < 60 and diff > 10) and 1 or 0,
+            PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
+            Strength = s
+        }
     end
 end
 
