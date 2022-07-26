@@ -9,6 +9,7 @@ local room = -1
 local item = Isaac.GetItemIdByName("Chronoscope")
 local BrimKnifeRandomV = Vector(0, 0)
 local familiarVec = { }
+local shaderDisfactor = 0
 local customSfx = {
     STOP_TIME_DIO = Isaac.GetSoundIdByName("StopDio"),
     RESUME_TIME_DIO = Isaac.GetSoundIdByName("ResumeDio"),
@@ -233,7 +234,7 @@ function TimeStop:onUpdate()
     local entities = Isaac.GetRoomEntities()
     if room ~= Game():GetLevel():GetCurrentRoomIndex() then
         --reset when leaving room
-        freezetime = 0
+        freezetime = 1
         for _, v in pairs(customSfx) do
             sfx:Stop(v)
         end
@@ -450,46 +451,45 @@ function TimeStop:onShader(name)
         if longWindup and maxTime - freezetime < 0 then
             dist = 0
         end
-        -- in case of skipped frames
-        if maxTime - freezetime < 2 and maxTime - freezetime > 0 then
-            player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
-        elseif freezetime == 320 and player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
-            player:AnimateCollectible(item, "HideItem", "PlayerPickup")
-            sfx:Play(customSfx.TICK_9, 5, 0, false, 1, 0)
-        elseif freezetime == 200 and not player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
-            player:AnimateCollectible(item, "HideItem", "PlayerPickup")
-            sfx:Play(customSfx.TICK_5, 5, 0, false, 1, 0)
-        elseif freezetime == outroTimeMarker then
-            finishingSfxHandler[effectVariant]()
-        elseif freezetime == 0 then
-            music:Resume()
-        end
 
         return {
             Enabled = useOldShader and 1 or 0,
             DistortionScale = dist,
             DistortionOn = on
         }
+
     elseif name == "ZaWarudo" then
         local pos = Isaac.WorldToScreen(Isaac.GetPlayer(0).Position)
         local diff = maxTime - freezetime
-        local t = (freezetime == 0 or diff <= 5) and 100 or diff - 5
+        local t = 0
+        local gscale = freezetime == 0 and 0 or 0.7 -
+                0.45 * math.max(outroTimeMarker - freezetime, 0) / outroTimeMarker
 
-        -- first wave
-        if diff < 12 then t = t / 10.0
-            -- second wave
-        elseif diff < 40 then t = (t - 6) / 20.0
-            -- third (incoming) wave
-        elseif diff < 60 then t = (56 - t) / 15.0
+        if freezetime == 0 or diff <= 5 then
+            t = -10
+            -- first wave
+        elseif diff < 40 then t = (diff - 4) / 12.0
+            -- second (incoming) wave
+        elseif diff < 60 then t = (61 - diff) / 8.0
+        else t = -10 end
+
+        if diff == 8 then
+            Game():ShakeScreen(8)
+            for _,v in pairs(Isaac.GetRoomEntities()) do
+                v:SetColor(Color(0.4, 0.4, 1.0, 1.0, 0.0, 0.0, 0.0), 50, 0, false, false)
+            end
+        elseif diff % 15 == 0 and diff < 60 then
+            shaderDisfactor =  math.random(4)
+            shaderDisfactor = (shaderDisfactor <= 2) and (-1 * shaderDisfactor) or math.floor(shaderDisfactor / 2)
         end
 
         return {
-            Enabled = (not useOldShader) and 1 or 0,
+            Enabled = (not useOldShader and freezetime ~= 0 and diff > 0) and ((diff < 40) and 1 or 2) or 0,
             Time = t,
             PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
-            Depth = 8.0,
-            Thickness = t * 3.5,
-            Reach = 0.1
+            Thickness = t * 5.5,
+            GreyScale = gscale,
+            Distort = t * shaderDisfactor / 16
         }
     end
 end

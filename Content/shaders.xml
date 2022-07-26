@@ -68,9 +68,9 @@
             <param name="Enabled" type="float"/>
             <param name="Time" type="float"/>
             <param name="PlayerPos" type="vec2"/>
-            <param name="Depth" type="float"/>
             <param name="Thickness" type="float"/>
-            <param name="Reach" type="float"/>
+            <param name="GreyScale" type="float"/>
+            <param name="Distort" type="float"/>
         </parameters>
         <vertex><![CDATA[
 			attribute vec3 Position;
@@ -81,9 +81,9 @@
 			attribute float Enabled;
 			attribute float Time;
 			attribute vec2 PlayerPos;
-			attribute float Depth;
 			attribute float Thickness;
-			attribute float Reach;
+			attribute float GreyScale;
+			attribute float Distort;
 			varying vec4 Color0;
 			varying vec2 TexCoord0;
 			varying lowp vec4 RenderDataOut;
@@ -91,9 +91,9 @@
 			varying float EnabledOut;
 			varying float TimeOut;
 			varying vec2 PlayerPosOut;
-			varying float DepthOut;
 			varying float ThicknessOut;
-			varying float ReachOut;
+			varying float GreyScaleOut;
+			varying float DistortOut;
 			uniform mat4 Transform;
 
 			void main(void)
@@ -106,9 +106,9 @@
 				EnabledOut = Enabled;
 				TimeOut = Time;
 				PlayerPosOut = PlayerPos;
-				DepthOut = Depth;
 				ThicknessOut = Thickness;
-				ReachOut = Reach;
+				GreyScaleOut = GreyScale;
+				DistortOut = Distort;
 
 				gl_Position = Transform * vec4(Position.xyz, 1.0);
 			}
@@ -121,16 +121,67 @@
 			varying lowp float EnabledOut;
 			varying lowp float TimeOut;
 			varying lowp vec2 PlayerPosOut;
-			varying lowp float DepthOut;
 			varying lowp float ThicknessOut;
-			varying lowp float ReachOut;
+			varying lowp float GreyScaleOut;
+			varying lowp float DistortOut;
 			uniform sampler2D Texture0;
+
+            vec4 hue(vec3 Color, float Shift)
+            {
+                vec3 P = vec3(0.55) * dot(vec3(0.55), Color);
+                vec3 U = Color - P;
+                vec3 V = cross(vec3(0.55), U);
+                Color = U * cos(Shift * 6.28) + V * sin(Shift * 6.28) + P;
+                return vec4(Color, 1.0);
+            }
+
+            float random(float x) { return fract(sin(x) * 10000.); }
+            float noise(vec2 p) { return random(p.x + p.y * 10000.); }
+
+            vec2 sw(vec2 p) { return vec2(floor(p.x), floor(p.y)); }
+            vec2 se(vec2 p) { return vec2(ceil(p.x), floor(p.y)); }
+            vec2 nw(vec2 p) { return vec2(floor(p.x), ceil(p.y)); }
+            vec2 ne(vec2 p) { return vec2(ceil(p.x), ceil(p.y)); }
+
+            float smoothNoise(vec2 p)
+            {
+                vec2 interp = smoothstep(0., 1., fract(p));
+                float s = mix(noise(sw(p)), noise(se(p)), interp.x);
+                float n = mix(noise(nw(p)), noise(ne(p)), interp.x);
+                return mix(s, n, interp.y);
+            }
+
+            float fractalNoise(vec2 p)
+            {
+                float x = 0.;
+                x += smoothNoise(p);
+                x += smoothNoise(p * 2.) / 2.;
+                x += smoothNoise(p * 4.) / 4.;
+                x += smoothNoise(p * 8.) / 8.;
+                x += smoothNoise(p * 16.) / 16.;
+                x /= 1. + 1./2. + 1./4. + 1./8. + 1./16.;
+                return x;
+            }
+
+            float movingNoise(vec2 p)
+            {
+                float x = fractalNoise(p);
+                float y = fractalNoise(p);
+                return fractalNoise(p + vec2(x, y));
+            }
+
+            float nestedNoise(vec2 p)
+            {
+                float x = movingNoise(p);
+                float y = movingNoise(p + 100.);
+                return movingNoise(p + vec2(x, y));
+            }
 
 			void main(void)
             {
                 vec4 Color = texture2D(Texture0, TexCoord0);
 
-                if (EnabledOut == 1)
+                if (EnabledOut != 0)
                 {
                     vec2 center = PlayerPosOut;
                     vec2 texCoord = gl_FragCoord / RenderDataOut.xy;
@@ -140,16 +191,50 @@
                     texCoord.y *= ratio;
                     float dist = distance(texCoord, center);
 
-                    if ((dist <= TimeOut + ReachOut) && (dist >= TimeOut - ReachOut))
+                    if ((dist <= TimeOut + 0.1) && (dist >= TimeOut - 0.1))
                     {
                         float diff = (dist - TimeOut);
-                        float scaledDiff = (1.0 - pow(abs(diff * DepthOut), ThicknessOut));
+                        float scaledDiff = (1.0 - pow(abs(diff * 10.0), ThicknessOut));
 
                         TexCoord0 += normalize(TexCoord0 - center) * diff  * scaledDiff /
                             (TimeOut * dist * 40.0);
 
-                        Color = texture(Texture0, TexCoord0);
+                        Color = texture2D(Texture0, TexCoord0);
                         Color += (Color * scaledDiff) / (TimeOut * dist * 40.0);
+                    }
+                    else if (dist < TimeOut - 0.1)
+                    {
+                        vec2 uv = TexCoord0;
+                        uv.x += cos(uv.y * 5.2 + DistortOut * 1.4) / 100.;
+                        uv.y += sin(uv.x * 5.1 + DistortOut * 1.4) / 100.;
+	                    uv.x -= cos(uv.y * 5.2 + DistortOut * 1.4) / 100.;
+	                    uv.x -= cos(uv.x * 5.2 + DistortOut * 1.4) / 100.;
+	                    vec2 offsetVector = vec2(0.);
+
+	                    if (dist < TimeOut - 0.2)
+	                    {
+	                        float factor = TimeOut;
+	                        if (EnabledOut == 2) { factor *= 2; }
+
+                            float n = nestedNoise(uv * 8.) * TimeOut;
+                            float lerp = sin(0.2 + TimeOut / 2. * dist) / 2.0;
+                            float offset = mix(0.0, 2.0, lerp);
+                            float s = 1;
+                            if (EnabledOut == 2) s = .01;
+                            offsetVector = normalize(s * (center - uv)) * (n * offset);
+                        }
+
+                        Color = texture2D(Texture0, uv);
+                        vec4 col = texture2D(Texture0, uv + offsetVector);
+                        Color *= hue(Color, TimeOut / 8.5) * 5.25;
+                        Color += col * 0.35;
+                    }
+                    else if ((dist > TimeOut + 0.1) && EnabledOut == 2)
+                    {
+                        Color.rgb = vec3(
+                        mix(Color.r, (Color.r + Color.g + Color.b)/3., GreyScaleOut),
+                        mix(Color.g, (Color.r + Color.g + Color.b)/3., GreyScaleOut),
+                        mix(Color.b, (Color.r + Color.g + Color.b)/3., GreyScaleOut));
                     }
                 }
                 gl_FragColor = Color0 * Color;
