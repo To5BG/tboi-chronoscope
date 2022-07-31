@@ -39,11 +39,11 @@ local voiceSfxDiego = {
 -- default values
 local effectVariant = "Dio"
 local voiceOver = false
+local useOldShader = false
 
 local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
 local longWindup = false
 local maxTime = 260
-local useOldShader = false
 ---------------------------------------------------------------------------
 ------------------------------HANDLERS-------------------------------------
 
@@ -196,11 +196,35 @@ if ModConfigMenu then
                 end
             }
     )
+    ModConfigMenu.AddSetting(
+            "Updated Chronoscope",
+            "General",
+            {
+                Type = ModConfigMenu.OptionType.NUMBER,
+                CurrentSetting = function()
+                        return useOldShader and 1 or 2
+                end,
+                Minimum = 1,
+                Maximum = 2,
+                Display = function()
+                    local textval = useOldShader and "Legacy" or "Realistic"
+                    return "Shader variant: " .. textval
+                end,
+                OnChange = function(val)
+                    useOldShader = (val == 1)
+                    SaveConfig()
+                end,
+                Info = function()
+                    return { "Changes time stop shader/visual effect. Realistic refers to the JoJo-like visual effect" }
+                end
+            }
+    )
 end
 
 function SaveConfig()
     if ModConfigMenu then
-        TimeStop:SaveData(json.encode({ voiceOver = voiceOver, effectVariant = effectVariant }))
+        TimeStop:SaveData(json.encode({ voiceOver = voiceOver, effectVariant = effectVariant,
+                                        useOldShader = useOldShader }))
     end
 end
 ---------------------------------------------------------------------------
@@ -514,7 +538,7 @@ function TimeStop:onShader(name)
         elseif diff < 60 then z = 0.9 end
 
         return {
-            Enabled = (freezetime ~= 0 and diff < 60) and 1 or 0,
+            Enabled = (not useOldShader and freezetime ~= 0 and diff < 60) and 1 or 0,
             PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
             Zoom = z
         }
@@ -582,6 +606,7 @@ function TimeStop:onGameStarted()
         local config = json.decode(TimeStop:LoadData())
         voiceOver = config.voiceOver
         effectVariant = config.effectVariant
+        useOldShader = config.useOldShader
         outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
     end
 end
