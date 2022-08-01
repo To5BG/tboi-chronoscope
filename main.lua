@@ -222,7 +222,7 @@ if ModConfigMenu then
                     SaveConfig()
                     UpdateColor()
                 end,
-                Info = { "Changes time stop shader/visual effect. Realistic refers to the JoJo-like visual effect" }
+                Info = { "Changes time stop shader/visual effect. 'Realistic' variant refers to the JoJo-like visual effect in the anime/manga" }
             }
     )
     ModConfigMenu.AddSetting(
@@ -242,12 +242,7 @@ if ModConfigMenu then
                     invertColors = val
                     SaveConfig()
                 end,
-                Info = { "Inverts the colors of the time stop effect (anime-like effect)." },
-                Color = {
-                    (useOldShader and 0.47 or 0),
-                    (useOldShader and 0.41 or 0),
-                    (useOldShader and 0.35 or 0)
-                }
+                Info = { "Inverts the colors of the time stop effect (anime-like effect)." }
             }
     )
 end
@@ -259,31 +254,24 @@ end
 
 function UpdateColor()
     ModConfigMenu.RemoveSetting("Updated Chronoscope", "General", "ColorInvert")
-    ModConfigMenu.AddSetting(
-            "Updated Chronoscope",
-            "General",
-            {
-                Type = ModConfigMenu.OptionType.BOOLEAN,
-                Attribute = "ColorInvert",
-                CurrentSetting = function()
-                    return invertColors
-                end,
-                Display = function()
-                    local booleanval = (invertColors and not useOldShader) and "True" or "False"
-                    return "Invert shader colors: " .. booleanval
-                end,
-                OnChange = function(val)
-                    invertColors = val
-                    SaveConfig()
-                end,
-                Info = { "Inverts the colors of the time stop effect (anime-like effect)." },
-                Color = {
-                    (useOldShader and 0.47 or 0),
-                    (useOldShader and 0.41 or 0),
-                    (useOldShader and 0.35 or 0)
-                }
-            }
-    )
+    local colorSettingTable = {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        Attribute = "ColorInvert",
+        CurrentSetting = function()
+            return invertColors
+        end,
+        Display = function()
+            local booleanval = (invertColors and not useOldShader) and "True" or "False"
+            return "Invert shader colors: " .. booleanval
+        end,
+        OnChange = function(val)
+            invertColors = val
+            SaveConfig()
+        end,
+        Info = { "Inverts the colors of the time stop effect (anime-like effect)." }
+    }
+    if useOldShader then colorSettingTable.Color = { 0.47, 0.41, 0.35 } end
+    ModConfigMenu.AddSetting("Updated Chronoscope", "General", colorSettingTable)
 end
 ---------------------------------------------------------------------------
 -------------------------CALLBACK FUNCTIONS--------------------------------
