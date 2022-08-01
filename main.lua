@@ -681,6 +681,17 @@ function TimeStop:onCacheEval(ent)
     maxTime = ent:HasCollectible(Isaac.GetItemIdByName("Car Battery")) and 380 or 260
 end
 
+function TimeStop:onPlayerInit(player)
+    canShoot[TimeStop:GetID(player) + 1] = player:CanShoot()
+end
+
+function TimeStop:onTearInit(tear)
+    if freezetime >= 1 and tear.SpawnerType == EntityType.ENTITY_FAMILIAR and canShoot[playerID + 1] then
+        tear:Remove()
+    end
+end
+
+TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_INIT, TimeStop.onTearInit)
 TimeStop:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, TimeStop.onCacheEval)
 TimeStop:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, TimeStop.onGameExit)
 TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE, TimeStop.onTearUpdate)
@@ -690,4 +701,5 @@ TimeStop:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, TimeStop.onShader)
 TimeStop:AddCallback(ModCallbacks.MC_USE_ITEM, TimeStop.onUse, item)
 TimeStop:AddCallback(ModCallbacks.MC_POST_UPDATE, TimeStop.onUpdate)
 TimeStop:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, TimeStop.onDamage)
-TimeStop:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, TimeStop.onGameStarted)
+TimeStop:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, TimeStop.onGameStarted)
+TimeStop:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, TimeStop.onPlayerInit)
