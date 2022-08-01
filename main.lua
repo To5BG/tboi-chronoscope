@@ -180,9 +180,7 @@ if ModConfigMenu then
                     longWindup = false
                     SaveConfig()
                 end,
-                Info = function()
-                    return { "Changes time stop sound effect. Based on all JoJo characters with that ability." }
-                end
+                Info = { "Changes time stop sound effect. Based on all JoJo characters with that ability." }
             }
     )
     ModConfigMenu.AddSetting(
@@ -202,9 +200,7 @@ if ModConfigMenu then
                     longWindup = false
                     SaveConfig()
                 end,
-                Info = function()
-                    return { "Enables character voice overs." }
-                end
+                Info = { "Enables character voice overs." }
             }
     )
     ModConfigMenu.AddSetting(
@@ -224,10 +220,34 @@ if ModConfigMenu then
                 OnChange = function(val)
                     useOldShader = (val == 1)
                     SaveConfig()
+                    UpdateColor()
                 end,
-                Info = function()
-                    return { "Changes time stop shader/visual effect. Realistic refers to the JoJo-like visual effect" }
-                end
+                Info = { "Changes time stop shader/visual effect. Realistic refers to the JoJo-like visual effect" }
+            }
+    )
+    ModConfigMenu.AddSetting(
+            "Updated Chronoscope",
+            "General",
+            {
+                Type = ModConfigMenu.OptionType.BOOLEAN,
+                Attribute = "ColorInvert",
+                CurrentSetting = function()
+                    return invertColors
+                end,
+                Display = function()
+                    local booleanval = (invertColors and not useOldShader) and "True" or "False"
+                    return "Invert shader colors: " .. booleanval
+                end,
+                OnChange = function(val)
+                    invertColors = val
+                    SaveConfig()
+                end,
+                Info = { "Inverts the colors of the time stop effect (anime-like effect)." },
+                Color = {
+                    (useOldShader and 0.47 or 0),
+                    (useOldShader and 0.41 or 0),
+                    (useOldShader and 0.35 or 0)
+                }
             }
     )
 end
@@ -235,6 +255,35 @@ end
 function SaveConfig()
     TimeStop:SaveData(json.encode({ voiceOver = voiceOver, effectVariant = effectVariant, useOldShader = useOldShader,
                                     invertColors = invertColors }))
+end
+
+function UpdateColor()
+    ModConfigMenu.RemoveSetting("Updated Chronoscope", "General", "ColorInvert")
+    ModConfigMenu.AddSetting(
+            "Updated Chronoscope",
+            "General",
+            {
+                Type = ModConfigMenu.OptionType.BOOLEAN,
+                Attribute = "ColorInvert",
+                CurrentSetting = function()
+                    return invertColors
+                end,
+                Display = function()
+                    local booleanval = (invertColors and not useOldShader) and "True" or "False"
+                    return "Invert shader colors: " .. booleanval
+                end,
+                OnChange = function(val)
+                    invertColors = val
+                    SaveConfig()
+                end,
+                Info = { "Inverts the colors of the time stop effect (anime-like effect)." },
+                Color = {
+                    (useOldShader and 0.47 or 0),
+                    (useOldShader and 0.41 or 0),
+                    (useOldShader and 0.35 or 0)
+                }
+            }
+    )
 end
 ---------------------------------------------------------------------------
 -------------------------CALLBACK FUNCTIONS--------------------------------
