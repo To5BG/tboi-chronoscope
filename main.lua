@@ -640,7 +640,8 @@ function TimeStop:onDamage(target, _, flags, source, _)
     if freezetime > 1 and target.Type ~= EntityType.ENTITY_PLAYER and flags & DamageFlag.DAMAGE_EXPLOSION ~= 0 then
         local data = target:GetData()
         data.Explodes = data.Explodes and data.Explodes + 1 or 1
-        if Isaac.GetPlayer(playerID):HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) then
+        if source.Type == 1000 and source.Variant == 31 then
+            --and Isaac.GetPlayer(playerID):HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS)
             data.Explodes = data.Explodes - 1 + Isaac.GetPlayer(playerID).Damage * 0.2
         end
         return false
