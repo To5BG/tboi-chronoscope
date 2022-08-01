@@ -71,6 +71,7 @@
             <param name="Thickness" type="float"/>
             <param name="GreyScale" type="float"/>
             <param name="Distort" type="float"/>
+            <param name="Inverted" type="float"/>
         </parameters>
         <vertex><![CDATA[
 			attribute vec3 Position;
@@ -84,6 +85,7 @@
 			attribute float Thickness;
 			attribute float GreyScale;
 			attribute float Distort;
+			attribute float Inverted;
 			varying vec4 Color0;
 			varying vec2 TexCoord0;
 			varying lowp vec4 RenderDataOut;
@@ -94,6 +96,7 @@
 			varying float ThicknessOut;
 			varying float GreyScaleOut;
 			varying float DistortOut;
+			varying float InvertedOut;
 			uniform mat4 Transform;
 
 			void main(void)
@@ -109,6 +112,7 @@
 				ThicknessOut = Thickness;
 				GreyScaleOut = GreyScale;
 				DistortOut = Distort;
+				InvertedOut = Inverted;
 
 				gl_Position = Transform * vec4(Position.xyz, 1.0);
 			}
@@ -124,6 +128,7 @@
 			varying lowp float ThicknessOut;
 			varying lowp float GreyScaleOut;
 			varying lowp float DistortOut;
+			varying lowp float InvertedOut;
 			uniform sampler2D Texture0;
 
             vec4 hue(vec3 Color, float Shift)
@@ -211,12 +216,12 @@
 	                    uv.x -= cos(uv.x * 5.2 + DistortOut * 1.4) / 100.;
 	                    vec2 offsetVector = vec2(0.);
 
+	                    float factor = TimeOut;
+	                    if (EnabledOut == 2) { factor *= 2; }
+
 	                    if (dist < TimeOut - 0.2)
 	                    {
-	                        float factor = TimeOut;
-	                        if (EnabledOut == 2) { factor *= 2; }
-
-                            float n = nestedNoise(uv * 8.) * TimeOut;
+                            float n = nestedNoise(uv * 8.) * factor;
                             float lerp = sin(0.2 + TimeOut / 2. * dist) / 2.0;
                             float offset = mix(0.0, 2.0, lerp);
                             float s = 1;
@@ -226,8 +231,12 @@
 
                         Color = texture2D(Texture0, uv);
                         vec4 col = texture2D(Texture0, uv + offsetVector);
-                        Color *= hue(Color, TimeOut / 8.5) * 5.25;
+                        Color *= hue(Color, factor / 5.5) * 5.25;
                         Color += col * 0.35;
+                        if (InvertedOut == 1)
+                        {
+                            Color.rgb = vec3(mix(.65, .75, TimeOut)) - Color.rgb;
+                        }
                     }
                     else if ((dist > TimeOut + 0.1) && EnabledOut == 2)
                     {

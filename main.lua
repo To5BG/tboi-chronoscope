@@ -40,6 +40,7 @@ local voiceSfxDiego = {
 local effectVariant = "Dio"
 local voiceOver = false
 local useOldShader = false
+local invertColors = true
 
 local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
 local longWindup = false
@@ -222,10 +223,8 @@ if ModConfigMenu then
 end
 
 function SaveConfig()
-    if ModConfigMenu then
-        TimeStop:SaveData(json.encode({ voiceOver = voiceOver, effectVariant = effectVariant,
-                                        useOldShader = useOldShader }))
-    end
+    TimeStop:SaveData(json.encode({ voiceOver = voiceOver, effectVariant = effectVariant, useOldShader = useOldShader,
+                                    invertColors = invertColors }))
 end
 ---------------------------------------------------------------------------
 -------------------------CALLBACK FUNCTIONS--------------------------------
@@ -497,7 +496,7 @@ function TimeStop:onShader(name)
         elseif diff < 60 then t = (61 - diff) / 8.0
         else t = -10 end
 
-        if diff == 8 then
+        if diff == 8 and not useOldShader then
             Game():ShakeScreen(8)
             for _,v in pairs(Isaac.GetRoomEntities()) do
                 v:SetColor(Color(0.4, 0.4, 1.0, 1.0, 0.0, 0.0, 0.0), 50, 0, false, false)
@@ -513,7 +512,8 @@ function TimeStop:onShader(name)
             PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
             Thickness = t * 5.5,
             GreyScale = gscale,
-            Distort = t * shaderDisfactor / 16
+            Distort = t * shaderDisfactor / 16,
+            Inverted = invertColors and 1 or 0
         }
 
     elseif name == "ZaWarudoBlur" then
@@ -607,6 +607,7 @@ function TimeStop:onGameStarted()
         voiceOver = config.voiceOver
         effectVariant = config.effectVariant
         useOldShader = config.useOldShader
+        invertColors = config.invertColors
         outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
     end
 end
