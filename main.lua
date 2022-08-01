@@ -45,6 +45,8 @@ local invertColors = true
 local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
 local longWindup = false
 local maxTime = 260
+local canShoot = {true, true, true, true}
+local playerID = 0
 ---------------------------------------------------------------------------
 ------------------------------HANDLERS-------------------------------------
 
@@ -103,6 +105,14 @@ local familiarHandler = {
         fam:FollowParent()
     end
 }
+---------------------------------------------------------------------------
+---------------------------HELPER METHODS----------------------------------
+function TimeStop:GetID(ent)
+    for i = 0, 3 do
+        if Isaac.GetPlayer(i).Index == ent.Index then return i end
+    end
+end
+
 ---------------------------------------------------------------------------
 -----------------------------MOD SUPPORT-----------------------------------
 local desc = "# Halts the flow of time for what feels like 5 seconds" ..
@@ -228,11 +238,11 @@ function SaveConfig()
 end
 ---------------------------------------------------------------------------
 -------------------------CALLBACK FUNCTIONS--------------------------------
-function TimeStop:onUse(_, _, _, flags)
+function TimeStop:onUse(_, _, player, flags)
     if flags & UseFlag.USE_CARBATTERY ~= 0 then
         return false
     end
-    local player = Isaac.GetPlayer(0)
+    playerID = TimeStop:GetID(player)
     room = Game():GetLevel():GetCurrentRoomIndex()
     startingSfxHandler[effectVariant]()
     if player:HasCollectible(Isaac.GetItemIdByName("Car Battery")) then
@@ -253,7 +263,7 @@ end
 function TimeStop:onUpdate()
     if freezetime == 0 then return end
 
-    local player = Isaac.GetPlayer(0)
+    local player = Isaac.GetPlayer(playerID)
     local entities = Isaac.GetRoomEntities()
     if room ~= Game():GetLevel():GetCurrentRoomIndex() then
         --reset when leaving room
@@ -293,7 +303,7 @@ function TimeStop:onUpdate()
                 end
                 if v.Type == EntityType.ENTITY_FAMILIAR then
                     v.Parent = player
-                    if familiarHandler[familiarVec[v.Index][2]] then
+                    if familiarVec[v.Index] then
                         familiarHandler[familiarVec[v.Index][2]](v:ToFamiliar())
                     end
                 end
@@ -325,7 +335,7 @@ function TimeStop:onUpdate()
         -- while on effect
         game.TimeCounter = savedtime
         for _, v in pairs(entities) do
-            if v.Type == EntityType.ENTITY_FAMILIAR then
+            if v.Type == EntityType.ENTITY_FAMILIAR and canShoot[playerID + 1] then
                 local fam = v:ToFamiliar()
                 fam.FireCooldown = freezetime + 35
                 if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
@@ -482,7 +492,7 @@ function TimeStop:onShader(name)
         }
 
     elseif name == "ZaWarudo" then
-        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(0).Position)
+        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(playerID).Position)
         local diff = maxTime - freezetime
         local t = 0
         local gscale = freezetime == 0 and 0 or 0.7 -
@@ -518,7 +528,7 @@ function TimeStop:onShader(name)
 
     elseif name == "ZaWarudoBlur" then
         local diff = maxTime - freezetime
-        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(0).Position)
+        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(playerID).Position)
         local s = 0
         if diff < 10 then s = diff * 3
         elseif diff < 40 then s = 30
@@ -532,7 +542,7 @@ function TimeStop:onShader(name)
 
     elseif name == "ZaWarudoZoom" then
         local diff = maxTime - freezetime
-        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(0).Position)
+        local pos = Isaac.WorldToScreen(Isaac.GetPlayer(playerID).Position)
         local z = 1
         if diff < 10 and diff > 5 then z = 1 - (diff - 5) * 0.02
         elseif diff < 60 then z = 0.9 end
@@ -573,7 +583,7 @@ function TimeStop:onDamage(target, _, flags, source, _)
     end
     if freezetime > 1 and source.Type == EntityType.ENTITY_PLAYER and flags & DamageFlag.DAMAGE_LASER ~= 0 then
         local data = target:GetData()
-        if not Isaac.GetPlayer(0):HasCollectible(CollectibleType.COLLECTIBLE_BRIMSTONE) then
+        if not Isaac.GetPlayer(playerID):HasCollectible(CollectibleType.COLLECTIBLE_BRIMSTONE) then
             data.LaserHit = data.LaserHit and data.LaserHit + 1 or 1
         end
         return false
@@ -581,8 +591,8 @@ function TimeStop:onDamage(target, _, flags, source, _)
     if freezetime > 1 and target.Type ~= EntityType.ENTITY_PLAYER and flags & DamageFlag.DAMAGE_EXPLOSION ~= 0 then
         local data = target:GetData()
         data.Explodes = data.Explodes and data.Explodes + 1 or 1
-        if Isaac.GetPlayer(0):HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) then
-            data.Explodes = data.Explodes - 1 + Isaac.GetPlayer(0).Damage * 0.2
+        if Isaac.GetPlayer(playerID):HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) then
+            data.Explodes = data.Explodes - 1 + Isaac.GetPlayer(playerID).Damage * 0.2
         end
         return false
     end
