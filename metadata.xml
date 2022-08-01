@@ -5,15 +5,15 @@
     <id>2746615600</id>
     <description>Take control of the world with this amazing timeless item!
 
-Gain the ability to stop time for all but yourself for a few seconds with this definitely-not-a-jojo-ripoff item!
+Gain the ability to stop time for all but yourself for a few seconds with this definitely-[b]not[/b]-a-jojo-ripoff item!
 
-This mod is an updated version of Sora's long defunct Chronoscope mod. Repentance-compatible and most old synergies (and some new additional ones) should function. While this mod builds on the original, you cannot have both mods enabled simultaneously. The shaders and certain mechanics have also been changed.
+This mod is an updated version of Sora's long defunct Chronoscope mod, which you can find [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1155180979]here[/url]. Repentance-compatible and most old synergies (and some new additional ones) should function. While this mod builds on the original, you cannot have both mods enabled simultaneously. The shaders and certain mechanics have also been changed.
 
-This mod is fully compatible with ModConfigMenu and Encyclopedia (by extension also EID). You can use the former to enable voice-overs and toggle the sound effects between all the jojo characters with the same ability (Dio, Jotaro, and Diego from SBR). Again, this mod is definitely not a jojo-ripoff...
+This mod is fully compatible with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2681875787]ModConfigMenu[/url], [url=https://steamcommunity.com/workshop/filedetails/?id=2376005362]Encyclopedia[/url], and also [url=https://steamcommunity.com/sharedfiles/filedetails/?id=836319872]EID[/url]. You can use the former to enable voice-overs and toggle the sound effects between all the jojo characters with the same ability (Dio, Jotaro, and Diego from SBR). Again, this mod is definitely not a jojo-ripoff...
 
 TODO for future releases: Fix familiars turning on player's turning direction (if even possible), most brimstone synergies.
 
-Obviously, huge thanks to Sora for the base code.</description>
+Obviously, huge thanks to [b]Sora[/b] for the base code.</description>
     <version>2.0</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
