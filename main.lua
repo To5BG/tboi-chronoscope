@@ -312,13 +312,16 @@ function TimeStop:onUse(_, _, player, flags)
 
     player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
     player:AddControlsCooldown(longWindup and 185 or 125)
+
+    -- if playing as forgotten, set up toggle and save fire rate
     local type = player:GetPlayerType()
-    forgottenToggle[playerID + 1] = ((type == PlayerType.PLAYER_THEFORGOTTEN or type == PlayerType.PLAYER_THEFORGOTTEN_B
-            or type == PlayerType.PLAYER_THESOUL or type == PlayerType.PLAYER_THESOUL_B) and not
+    local playsAsForgotten = (type == PlayerType.PLAYER_THEFORGOTTEN or type == PlayerType.PLAYER_THEFORGOTTEN_B)
+
+    forgottenToggle[playerID + 1] = ((playsAsForgotten or type == PlayerType.PLAYER_THESOUL or
+            type == PlayerType.PLAYER_THESOUL_B) and not
             player:HasCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY)) and 2 or 0
     if forgottenToggle[playerID + 1] ~= 0 then
-        savedFireRate[playerID + 1] = math.min(player.MaxFireDelay, player:GetSubPlayer().MaxFireDelay)
-        Isaac.ConsoleOutput("hi "..savedFireRate[playerID + 1].."\n")
+        savedFireRate[playerID + 1] = playsAsForgotten and (player.MaxFireDelay - 1) / 2 or player.MaxFireDelay
         TimeStop:UpdateForgotten(player, playerID + 1)
     end
     return false
@@ -709,8 +712,8 @@ end
 
 function TimeStop:onCacheEval(ent, flag)
     maxTime = ent:HasCollectible(Isaac.GetItemIdByName("Car Battery")) and 380 or 260
+    -- if fire delay cache flag from given anti-grav, then undo stat change
     if freezetime ~= 0 and forgottenToggle[playerID + 1] ~= 0 and flag == CacheFlag.CACHE_FIREDELAY then
-        Isaac.ConsoleOutput("hiii\n")
         local type = ent:GetPlayerType()
         if type == PlayerType.PLAYER_THEFORGOTTEN or type == PlayerType.PLAYER_THEFORGOTTEN_B then
             ent.MaxFireDelay = savedFireRate[playerID + 1] * 2 + 1
