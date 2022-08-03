@@ -47,6 +47,8 @@ local longWindup = false
 local maxTime = 260
 local canShoot = {true, true, true, true}
 local playerID = 0
+local forgottenToggle = { 0, 0, 0, 0 }
+local savedFireRate = { 0, 0, 0, 0 }
 ---------------------------------------------------------------------------
 ------------------------------HANDLERS-------------------------------------
 
@@ -113,6 +115,22 @@ function TimeStop:GetID(ent)
     end
 end
 
+function TimeStop:UpdateForgotten(player, id)
+    local typee = player:GetPlayerType()
+    if typee == PlayerType.PLAYER_THEFORGOTTEN or typee == PlayerType.PLAYER_THEFORGOTTEN_B then
+        if forgottenToggle[id] == 3 then
+            player:AddCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY, 0, false, 0, 0)
+            local agrav = Isaac.GetItemConfig():GetCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY)
+            player:RemoveCostume(agrav)
+        end
+        forgottenToggle[id] = (forgottenToggle[id] == 2) and 3 or 1
+    else
+        if forgottenToggle[id] == 3 then
+            player:RemoveCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY, true, 0, true)
+        end
+        forgottenToggle[id] = (forgottenToggle[id] == 1) and 3 or 2
+    end
+end
 ---------------------------------------------------------------------------
 -----------------------------MOD SUPPORT-----------------------------------
 local desc = "# Halts the flow of time for what feels like 5 seconds" ..
@@ -294,6 +312,15 @@ function TimeStop:onUse(_, _, player, flags)
 
     player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
     player:AddControlsCooldown(longWindup and 185 or 125)
+    local type = player:GetPlayerType()
+    forgottenToggle[playerID + 1] = ((type == PlayerType.PLAYER_THEFORGOTTEN or type == PlayerType.PLAYER_THEFORGOTTEN_B
+            or type == PlayerType.PLAYER_THESOUL or type == PlayerType.PLAYER_THESOUL_B) and not
+            player:HasCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY)) and 2 or 0
+    if forgottenToggle[playerID + 1] ~= 0 then
+        savedFireRate[playerID + 1] = math.min(player.MaxFireDelay, player:GetSubPlayer().MaxFireDelay)
+        Isaac.ConsoleOutput("hi "..savedFireRate[playerID + 1].."\n")
+        TimeStop:UpdateForgotten(player, playerID + 1)
+    end
     return false
 end
 
@@ -323,7 +350,17 @@ function TimeStop:onUpdate()
         music:Resume()
     end
 
+    -- handle The Forgotten's anti-grav
+    if forgottenToggle[playerID + 1] ~= 0 then
+        TimeStop:UpdateForgotten(player, playerID + 1)
+    end
+
     if freezetime == 1 then
+        --force anti-grav removal
+        if forgottenToggle[playerID + 1] % 2 ~= 0 then
+            player:RemoveCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY, true, 0, true)
+            forgottenToggle[playerID + 1] = 2
+        end
         --restore tear attributes
         for _, v in pairs(entities) do
             if v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
@@ -395,7 +432,11 @@ function TimeStop:onUpdate()
                     v.Target = nil
                     v.Parent = nil
                 end
-            elseif v.Type ~= EntityType.ENTITY_PLAYER then
+            elseif v.Type ~= EntityType.ENTITY_PLAYER and
+                    (forgottenToggle[playerID + 1] ~= 0 and not (v.Type == EntityType.ENTITY_EFFECT and (
+                    v.Variant == EffectVariant.FORGOTTEN_CHAIN or v.Variant == EffectVariant.FORGOTTEN_SOUL or
+                    v.Variant == EffectVariant.HAEMO_TRAIL or
+                            (v.Variant == EffectVariant.POOF02 and v.SubType == 10)))) then
                 if v.Type ~= EntityType.ENTITY_PROJECTILE then
                     if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                         v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
@@ -666,8 +707,15 @@ function TimeStop:onGameExit()
     end
 end
 
-function TimeStop:onCacheEval(ent)
+function TimeStop:onCacheEval(ent, flag)
     maxTime = ent:HasCollectible(Isaac.GetItemIdByName("Car Battery")) and 380 or 260
+    if freezetime ~= 0 and forgottenToggle[playerID + 1] ~= 0 and flag == CacheFlag.CACHE_FIREDELAY then
+        Isaac.ConsoleOutput("hiii\n")
+        local type = ent:GetPlayerType()
+        if type == PlayerType.PLAYER_THEFORGOTTEN or type == PlayerType.PLAYER_THEFORGOTTEN_B then
+            ent.MaxFireDelay = savedFireRate[playerID + 1] * 2 + 1
+        else ent.MaxFireDelay = savedFireRate[playerID + 1] end
+    end
 end
 
 function TimeStop:onPlayerInit(player)
