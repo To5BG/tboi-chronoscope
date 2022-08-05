@@ -435,11 +435,10 @@ function TimeStop:onUpdate()
                     v.Target = nil
                     v.Parent = nil
                 end
-            elseif v.Type ~= EntityType.ENTITY_PLAYER and
-                    (forgottenToggle[playerID + 1] ~= 0 and not (v.Type == EntityType.ENTITY_EFFECT and (
+            elseif v.Type ~= EntityType.ENTITY_PLAYER and not (v.Type == EntityType.ENTITY_EFFECT and (
                     v.Variant == EffectVariant.FORGOTTEN_CHAIN or v.Variant == EffectVariant.FORGOTTEN_SOUL or
                     v.Variant == EffectVariant.HAEMO_TRAIL or
-                            (v.Variant == EffectVariant.POOF02 and v.SubType == 10)))) then
+                            (v.Variant == EffectVariant.POOF02 and v.SubType == 10))) then
                 if v.Type ~= EntityType.ENTITY_PROJECTILE then
                     if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                         v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
@@ -722,6 +721,10 @@ function TimeStop:onCacheEval(ent, flag)
 end
 
 function TimeStop:onPlayerInit(player)
+    -- shader crash fix
+    if #Isaac.FindByType(EntityType.ENTITY_PLAYER) == 0 then
+        Isaac.ExecuteCommand("reloadshaders")
+    end
     canShoot[TimeStop:GetID(player) + 1] = player:CanShoot()
 end
 
