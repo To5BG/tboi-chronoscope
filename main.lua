@@ -419,7 +419,7 @@ function TimeStop:onUpdate()
                 --add frozen swing effect
                 if freezewoosh and v.SubType == 4 and v.Visible then
                     v.Visible = false
-                    local dir = player:GetFireDirection()
+                    local dir = player:GetHeadDirection()
                     -- spawn proper swing effect
                     local ent = Isaac.Spawn(1000, 1000, (v.Variant == 2) and 106 or 105,
                             Isaac.GetPlayer(playerID).Position, Vector(0,0), nil)
@@ -442,6 +442,9 @@ function TimeStop:onUpdate()
                         v:AddEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
                         if v:IsBoss() then
                             v:AddEntityFlags(EntityFlag.FLAG_NO_SPRITE_UPDATE)
+                        end
+                        if v.Type == EntityType.ENTITY_PICKUP then
+                            v:ToPickup().Timeout = freezetime + 60
                         end
                     end
                 end
