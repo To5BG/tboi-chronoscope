@@ -41,14 +41,13 @@ local effectVariant = "Dio"
 local voiceOver = false
 local useOldShader = false
 local invertColors = true
+local freezewoosh = true
 
 local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
 local longWindup = false
 local maxTime = 260
 local canShoot = {true, true, true, true}
 local playerID = 0
-local forgottenToggle = { 0, 0, 0, 0 }
-local savedFireRate = { 0, 0, 0, 0 }
 ---------------------------------------------------------------------------
 ------------------------------HANDLERS-------------------------------------
 
@@ -112,23 +111,6 @@ local familiarHandler = {
 function TimeStop:GetID(ent)
     for i = 0, 3 do
         if Isaac.GetPlayer(i).Index == ent.Index then return i end
-    end
-end
-
-function TimeStop:UpdateForgotten(player, id)
-    local typee = player:GetPlayerType()
-    if typee == PlayerType.PLAYER_THEFORGOTTEN or typee == PlayerType.PLAYER_THEFORGOTTEN_B then
-        if forgottenToggle[id] == 3 then
-            player:AddCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY, 0, false, 0, 0)
-            local agrav = Isaac.GetItemConfig():GetCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY)
-            player:RemoveCostume(agrav)
-        end
-        forgottenToggle[id] = (forgottenToggle[id] == 2) and 3 or 1
-    else
-        if forgottenToggle[id] == 3 then
-            player:RemoveCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY, true, 0, true)
-        end
-        forgottenToggle[id] = (forgottenToggle[id] == 1) and 3 or 2
     end
 end
 ---------------------------------------------------------------------------
@@ -263,11 +245,30 @@ if ModConfigMenu then
                 Info = { "Inverts the colors of the time stop effect (anime-like effect)." }
             }
     )
+    ModConfigMenu.AddSetting(
+            "Updated Chronoscope",
+            "General",
+            {
+                Type = ModConfigMenu.OptionType.BOOLEAN,
+                CurrentSetting = function()
+                    return freezewoosh
+                end,
+                Display = function()
+                    local booleanval = freezewoosh and "True" or "False"
+                    return "Freeze swing woosh: " .. booleanval
+                end,
+                OnChange = function(val)
+                    freezewoosh = val
+                    SaveConfig()
+                end,
+                Info = { "Freezes the 'woosh' effect from swing-type weapons, like The Forgotten's bone club or Magdalene's melee attack (purely visual)." }
+            }
+    )
 end
 
 function SaveConfig()
     TimeStop:SaveData(json.encode({ voiceOver = voiceOver, effectVariant = effectVariant, useOldShader = useOldShader,
-                                    invertColors = invertColors }))
+                                    invertColors = invertColors, freezewoosh = freezewoosh }))
 end
 
 function UpdateColor()
@@ -313,17 +314,6 @@ function TimeStop:onUse(_, _, player, flags)
     player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
     player:AddControlsCooldown(longWindup and 185 or 125)
 
-    -- if playing as forgotten, set up toggle and save fire rate
-    local type = player:GetPlayerType()
-    local playsAsForgotten = (type == PlayerType.PLAYER_THEFORGOTTEN or type == PlayerType.PLAYER_THEFORGOTTEN_B)
-
-    forgottenToggle[playerID + 1] = ((playsAsForgotten or type == PlayerType.PLAYER_THESOUL or
-            type == PlayerType.PLAYER_THESOUL_B) and not
-            player:HasCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY)) and 2 or 0
-    if forgottenToggle[playerID + 1] ~= 0 then
-        savedFireRate[playerID + 1] = playsAsForgotten and (player.MaxFireDelay - 1) / 2 or player.MaxFireDelay
-        TimeStop:UpdateForgotten(player, playerID + 1)
-    end
     return false
 end
 
@@ -353,17 +343,7 @@ function TimeStop:onUpdate()
         music:Resume()
     end
 
-    -- handle The Forgotten's anti-grav
-    if forgottenToggle[playerID + 1] ~= 0 then
-        TimeStop:UpdateForgotten(player, playerID + 1)
-    end
-
     if freezetime == 1 then
-        --force anti-grav removal
-        if forgottenToggle[playerID + 1] % 2 ~= 0 then
-            player:RemoveCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY, true, 0, true)
-            forgottenToggle[playerID + 1] = 2
-        end
         --restore tear attributes
         for _, v in pairs(entities) do
             if v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
@@ -434,6 +414,23 @@ function TimeStop:onUpdate()
                     v.Velocity = Vector(0, 0)
                     v.Target = nil
                     v.Parent = nil
+                end
+            elseif v.Type == 8 and v.Variant ~= 0 then
+                --add frozen swing effect
+                if freezewoosh and v.SubType == 4 and v.Visible then
+                    v.Visible = false
+                    local dir = player:GetFireDirection()
+                    -- spawn proper swing effect
+                    local ent = Isaac.Spawn(1000, 1000, (v.Variant == 2) and 106 or 105,
+                            Isaac.GetPlayer(playerID).Position, Vector(0,0), nil)
+                    local range = player.TearRange
+                    if range > 360 then
+                        ent.Position = ent.Position + ((dir % 2 == 0)
+                                and Vector((dir - 1) * range / 9, 0) or Vector(0, (dir - 2) * range / 9))
+                    end
+                    ent.SpriteScale = v.SpriteScale or player.SpriteScale
+                    ent.SpriteRotation = (dir + 1) * 90
+                    ent:AddEntityFlags(EntityFlag.FLAG_FREEZE)
                 end
             elseif v.Type ~= EntityType.ENTITY_PLAYER and not (v.Type == EntityType.ENTITY_EFFECT and (
                     v.Variant == EffectVariant.FORGOTTEN_CHAIN or v.Variant == EffectVariant.FORGOTTEN_SOUL or
@@ -699,6 +696,7 @@ function TimeStop:onGameStarted()
         effectVariant = config.effectVariant
         useOldShader = config.useOldShader
         invertColors = config.invertColors
+        freezewoosh = config.freezewoosh
         outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
     end
 end
@@ -711,13 +709,6 @@ end
 
 function TimeStop:onCacheEval(ent, flag)
     maxTime = ent:HasCollectible(Isaac.GetItemIdByName("Car Battery")) and 380 or 260
-    -- if fire delay cache flag from given anti-grav, then undo stat change
-    if freezetime ~= 0 and forgottenToggle[playerID + 1] ~= 0 and flag == CacheFlag.CACHE_FIREDELAY then
-        local type = ent:GetPlayerType()
-        if type == PlayerType.PLAYER_THEFORGOTTEN or type == PlayerType.PLAYER_THEFORGOTTEN_B then
-            ent.MaxFireDelay = savedFireRate[playerID + 1] * 2 + 1
-        else ent.MaxFireDelay = savedFireRate[playerID + 1] end
-    end
 end
 
 function TimeStop:onPlayerInit(player)
