@@ -385,6 +385,9 @@ function TimeStop:onUpdate()
                 elseif v.Type == EntityType.ENTITY_KNIFE then
                     local data = v:GetData()
                     data.Frozen = nil
+                elseif v.Type == EntityType.ENTITY_EFFECT then
+                    local data = v:GetData()
+                    v.Velocity = data.StoredVel
                 end
             end
         end
@@ -392,7 +395,9 @@ function TimeStop:onUpdate()
         -- while on effect
         game.TimeCounter = savedtime
         for _, v in pairs(entities) do
-            if v.Type == EntityType.ENTITY_FAMILIAR and canShoot[playerID + 1] then
+            if v.Type == EntityType.ENTITY_FAMILIAR and canShoot[playerID + 1] and
+                    -- Tainted Lilith's fetus
+                    v.Variant ~= FamiliarVariant.UMBILICAL_BABY then
                 local fam = v:ToFamiliar()
                 fam.FireCooldown = freezetime + 35
                 if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
@@ -542,6 +547,9 @@ function TimeStop:onUpdate()
                             offset2 = math.random(-300, 300) / 1000
                         end
                     end
+                elseif v.Type == EntityType.ENTITY_EFFECT then
+                    v:GetData().StoredVel = v.Velocity
+                    v.Velocity = Vector(0, 0)
                 end
             end
         end
