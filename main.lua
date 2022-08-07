@@ -447,9 +447,9 @@ function TimeStop:onUpdate()
                         v:AddEntityFlags(EntityFlag.FLAG_NO_KNOCKBACK)
                         if v:IsBoss() then
                             v:AddEntityFlags(EntityFlag.FLAG_NO_SPRITE_UPDATE)
-                        end
-                        if v.Type == EntityType.ENTITY_PICKUP then
-                            v:ToPickup().Timeout = freezetime + 60
+                        elseif v.Type == EntityType.ENTITY_PICKUP then
+                            local pickup = v:ToPickup()
+                            pickup.Timeout = (pickup.Timeout ~= -1) and freezetime + 60 or -1
                         end
                     end
                 end
