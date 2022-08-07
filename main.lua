@@ -207,6 +207,25 @@ if ModConfigMenu then
             "Updated Chronoscope",
             "General",
             {
+                Type = ModConfigMenu.OptionType.BOOLEAN,
+                CurrentSetting = function()
+                    return freezewoosh
+                end,
+                Display = function()
+                    local booleanval = freezewoosh and "True" or "False"
+                    return "Freeze swing woosh: " .. booleanval
+                end,
+                OnChange = function(val)
+                    freezewoosh = val
+                    SaveConfig()
+                end,
+                Info = { "Freezes the 'woosh' effect from swing-type weapons, like The Forgotten's bone club or Magdalene's melee attack (purely visual)." }
+            }
+    )
+    ModConfigMenu.AddSetting(
+            "Updated Chronoscope",
+            "General",
+            {
                 Type = ModConfigMenu.OptionType.NUMBER,
                 CurrentSetting = function()
                         return useOldShader and 1 or 2
@@ -243,25 +262,6 @@ if ModConfigMenu then
                     SaveConfig()
                 end,
                 Info = { "Inverts the colors of the time stop effect (anime-like effect)." }
-            }
-    )
-    ModConfigMenu.AddSetting(
-            "Updated Chronoscope",
-            "General",
-            {
-                Type = ModConfigMenu.OptionType.BOOLEAN,
-                CurrentSetting = function()
-                    return freezewoosh
-                end,
-                Display = function()
-                    local booleanval = freezewoosh and "True" or "False"
-                    return "Freeze swing woosh: " .. booleanval
-                end,
-                OnChange = function(val)
-                    freezewoosh = val
-                    SaveConfig()
-                end,
-                Info = { "Freezes the 'woosh' effect from swing-type weapons, like The Forgotten's bone club or Magdalene's melee attack (purely visual)." }
             }
     )
 end
@@ -420,6 +420,7 @@ function TimeStop:onUpdate()
                     v.Target = nil
                     v.Parent = nil
                 end
+                -- swing-type weapons
             elseif v.Type == 8 and v.Variant ~= 0 then
                 --add frozen swing effect
                 if freezewoosh and v.SubType == 4 and v.Visible then
@@ -437,10 +438,11 @@ function TimeStop:onUpdate()
                     ent.SpriteRotation = (dir + 1) * 90
                     ent:AddEntityFlags(EntityFlag.FLAG_FREEZE)
                 end
-            elseif v.Type ~= EntityType.ENTITY_PLAYER and not (v.Type == EntityType.ENTITY_EFFECT and (
-                    v.Variant == EffectVariant.FORGOTTEN_CHAIN or v.Variant == EffectVariant.FORGOTTEN_SOUL or
-                    v.Variant == EffectVariant.HAEMO_TRAIL or
-                            (v.Variant == EffectVariant.POOF02 and v.SubType == 10))) then
+                -- The Forgotten's effects
+            elseif v.Type == EntityType.ENTITY_EFFECT and (v.Variant == EffectVariant.FORGOTTEN_CHAIN or
+                    v.Variant == EffectVariant.FORGOTTEN_SOUL or v.Variant == EffectVariant.HAEMO_TRAIL or
+                            (v.Variant == EffectVariant.POOF02 and v.SubType == 10)) then
+            elseif v.Type ~= EntityType.ENTITY_PLAYER then
                 if v.Type ~= EntityType.ENTITY_PROJECTILE then
                     if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                         v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
