@@ -46,8 +46,9 @@ local freezewoosh = true
 local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
 local longWindup = false
 local maxTime = 260
-local canShoot = {true, true, true, true}
+local canShoot = { true, true, true, true }
 local playerID = 0
+local savedspikestates = { }
 ---------------------------------------------------------------------------
 ------------------------------HANDLERS-------------------------------------
 
@@ -314,6 +315,14 @@ function TimeStop:onUse(_, _, player, flags)
     player:AnimateCollectible(item, "LiftItem", "PlayerPickup")
     player:AddControlsCooldown(longWindup and 185 or 125)
 
+    -- save spike states
+    local room = Game():GetRoom()
+    for i = 0, room:GetGridSize() - 1 do
+        local ent = room:GetGridEntity(i)
+        if ent and ent:GetType() == GridEntityType.GRID_SPIKES_ONOFF then
+            savedspikestates[i + 1] = ent.State
+        end
+    end
     return false
 end
 
@@ -344,7 +353,9 @@ function TimeStop:onUpdate()
     end
 
     if freezetime == 1 then
-        --restore tear attributes
+        -- restore spike states hashtable
+        savedspikestates = { }
+        -- restore tear attributes
         for _, v in pairs(entities) do
             if v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                 v:ClearEntityFlags(EntityFlag.FLAG_FREEZE)
@@ -553,6 +564,13 @@ function TimeStop:onUpdate()
                     v:GetData().StoredVel = v.Velocity
                     v.Velocity = Vector(0, 0)
                 end
+            end
+        end
+        local room = Game():GetRoom()
+        for i = 0, room:GetGridSize() - 1 do
+            local ent = room:GetGridEntity(i)
+            if ent and ent:GetType() == GridEntityType.GRID_SPIKES_ONOFF then
+                ent.State = savedspikestates[i + 1]
             end
         end
     end
