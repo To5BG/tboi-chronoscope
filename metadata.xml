@@ -13,8 +13,10 @@ This mod is fully compatible with [url=https://steamcommunity.com/sharedfiles/fi
 
 TODO for future releases: Fix familiars turning on player's turning direction (if even possible), most brimstone synergies.
 
-Obviously, huge thanks to [b]Sora[/b] for the base code.</description>
-    <version>2.0</version>
+Obviously, huge thanks to [b]Sora[/b] for the base code.
+
+[i][b][u]NOTE:[/u] You might get a black screen after starting a run. That is caused either by conflicting mods (only one I garnered from my own testing was the Job modpack, but there could be more), or if you are on an OS without native support (like Proton on Linux). In that case, reinstall the mod, or disable other mods that use shaders. As a last resort, you can just rename/delete the shader.xml for this mod (with the cost of effect immersion, of course...)[/b][/i]</description>
+    <version>2.4</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Active Items"/>
