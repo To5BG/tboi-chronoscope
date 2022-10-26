@@ -348,8 +348,6 @@ function TimeStop:onUpdate()
         sfx:Play(customSfx.TICK_5, 5, 0, false, 1, 0)
     elseif freezetime == outroTimeMarker then
         finishingSfxHandler[effectVariant]()
-    elseif freezetime == 0 then
-        music:Resume()
     end
 
     if freezetime == 1 then
@@ -401,6 +399,7 @@ function TimeStop:onUpdate()
                     v.Velocity = data.StoredVel
                 end
             end
+            music:Resume()
         end
     elseif freezetime > 1 --[[and (not longWindup or (maxTime - freezetime >= 0))--]] then
         -- while on effect
