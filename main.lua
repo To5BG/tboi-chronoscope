@@ -637,9 +637,8 @@ function TimeStop:onShader(name)
         local diff = maxTime - freezetime
         local pos = Isaac.WorldToScreen(Isaac.GetPlayer(playerID).Position)
         local s = 0
-        if diff < 10 then s = diff * 3
-        elseif diff < 40 then s = 30
-        else s = math.max(0, 60 - diff) end
+        if diff < 20 then s = diff * 3
+        else s = math.max(0, 80 - diff) end
 
         return {
             Enabled = (not useOldShader and freezetime ~= 0 and diff < 60 and diff > 10) and 1 or 0,
@@ -651,8 +650,8 @@ function TimeStop:onShader(name)
         local diff = maxTime - freezetime
         local pos = Isaac.WorldToScreen(Isaac.GetPlayer(playerID).Position)
         local z = 1
-        if diff < 10 and diff > 5 then z = 1 - (diff - 5) * 0.02
-        elseif diff < 60 then z = 0.9 end
+        if diff <= 12 and diff >= 8 then z = 1 - (diff - 7) * 0.03
+        elseif diff > 12 and diff < 60 then z = 0.85 end
 
         return {
             Enabled = (not useOldShader and freezetime ~= 0 and diff < 60) and 1 or 0,

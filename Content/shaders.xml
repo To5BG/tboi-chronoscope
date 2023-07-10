@@ -54,9 +54,9 @@
                     vec3 fcol = vec3(mix(col.r, col2.r, DistortionScaleOut),
                         mix(col.g, col2.g, DistortionScaleOut),
                         mix(col.b, col2.b, DistortionScaleOut));
-                    vec3 mcol = vec3(mix(fcol.r, (fcol.r+fcol.g+fcol.b)/3., DistortionOnOut),
-                        mix(fcol.g, (fcol.r+fcol.g+fcol.b)/3., DistortionOnOut),
-                        mix(fcol.b, (fcol.r+fcol.g+fcol.b)/3., DistortionOnOut));
+                    vec3 mcol = vec3(mix(fcol.r, (fcol.r + fcol.g + fcol.b) / 3.0, DistortionOnOut),
+                        mix(fcol.g, (fcol.r + fcol.g + fcol.b) / 3.0, DistortionOnOut),
+                        mix(fcol.b, (fcol.r + fcol.g + fcol.b) / 3.0, DistortionOnOut));
                     col.rgb = mcol;
                 }
 				gl_FragColor = Color0 * col;
@@ -131,17 +131,16 @@
 			varying lowp float InvertedOut;
 			uniform sampler2D Texture0;
 
-            vec4 hue(vec3 Color, float Shift)
+            vec4 hue(vec4 Color, float Shift)
             {
-                vec3 P = vec3(0.55) * dot(vec3(0.55), Color);
-                vec3 U = Color - P;
+                vec3 P = vec3(0.55) * dot(vec3(0.55), Color.rgb);
+                vec3 U = Color.rgb - P;
                 vec3 V = cross(vec3(0.55), U);
-                Color = U * cos(Shift * 6.28) + V * sin(Shift * 6.28) + P;
-                return vec4(Color, 1.0);
+                return vec4(U * cos(Shift * 6.28) + V * sin(Shift * 6.28) + P, 1.0);
             }
 
-            float random(float x) { return fract(sin(x) * 10000.); }
-            float noise(vec2 p) { return random(p.x + p.y * 10000.); }
+            float random(float x) { return fract(sin(x) * 10000.0); }
+            float noise(vec2 p) { return random(p.x + p.y * 10000.0); }
 
             vec2 sw(vec2 p) { return vec2(floor(p.x), floor(p.y)); }
             vec2 se(vec2 p) { return vec2(ceil(p.x), floor(p.y)); }
@@ -150,7 +149,7 @@
 
             float smoothNoise(vec2 p)
             {
-                vec2 interp = smoothstep(0., 1., fract(p));
+                vec2 interp = smoothstep(0.0, 1.0, fract(p));
                 float s = mix(noise(sw(p)), noise(se(p)), interp.x);
                 float n = mix(noise(nw(p)), noise(ne(p)), interp.x);
                 return mix(s, n, interp.y);
@@ -158,13 +157,13 @@
 
             float fractalNoise(vec2 p)
             {
-                float x = 0.;
+                float x = 0.0;
                 x += smoothNoise(p);
-                x += smoothNoise(p * 2.) / 2.;
-                x += smoothNoise(p * 4.) / 4.;
-                x += smoothNoise(p * 8.) / 8.;
-                x += smoothNoise(p * 16.) / 16.;
-                x /= 1. + 1./2. + 1./4. + 1./8. + 1./16.;
+                x += smoothNoise(p * 2.0) / 2.0;
+                x += smoothNoise(p * 4.0) / 4.0;
+                x += smoothNoise(p * 8.0) / 8.0;
+                x += smoothNoise(p * 16.0) / 16.0;
+                x /= 1.0 + 0.5 + 0.25 + 0.125 + 1.0 / 16.0;
                 return x;
             }
 
@@ -178,7 +177,7 @@
             float nestedNoise(vec2 p)
             {
                 float x = movingNoise(p);
-                float y = movingNoise(p + 100.);
+                float y = movingNoise(p + 100.0);
                 return movingNoise(p + vec2(x, y));
             }
 
@@ -189,7 +188,7 @@
                 if (EnabledOut != 0)
                 {
                     vec2 center = PlayerPosOut;
-                    vec2 texCoord = gl_FragCoord / RenderDataOut.xy;
+                    vec2 texCoord = gl_FragCoord.xy / RenderDataOut.xy;
 
                     float ratio = RenderDataOut.y / RenderDataOut.x;
                     center.y *= ratio;
@@ -201,38 +200,35 @@
                         float diff = (dist - TimeOut);
                         float scaledDiff = (1.0 - pow(abs(diff * 10.0), ThicknessOut));
 
-                        TexCoord0 += normalize(TexCoord0 - center) * diff  * scaledDiff /
-                            (TimeOut * dist * 40.0);
-
-                        Color = texture2D(Texture0, TexCoord0);
+                        Color = texture2D(Texture0, TexCoord0 + normalize(TexCoord0 - center) * diff  * scaledDiff /
+                            (TimeOut * dist * 40.0));
                         Color += (Color * scaledDiff) / (TimeOut * dist * 40.0);
                     }
                     else if (dist < TimeOut - 0.1)
                     {
                         vec2 uv = TexCoord0;
-                        uv.x += cos(uv.y * 5.2 + DistortOut * 1.4) / 100.;
-                        uv.y += sin(uv.x * 5.1 + DistortOut * 1.4) / 100.;
-	                    uv.x -= cos(uv.y * 5.2 + DistortOut * 1.4) / 100.;
-	                    uv.x -= cos(uv.x * 5.2 + DistortOut * 1.4) / 100.;
-	                    vec2 offsetVector = vec2(0.);
+                        uv.x += cos(uv.y * 5.2 + DistortOut * 1.4) / 100.0;
+                        uv.y += sin(uv.x * 5.1 + DistortOut * 1.4) / 100.0;
+	                    uv.x -= cos(uv.y * 5.2 + DistortOut * 1.4) / 100.0;
+	                    uv.x -= cos(uv.x * 5.2 + DistortOut * 1.4) / 100.0;
+	                    vec2 offsetVector = vec2(0.0);
 
 	                    float factor = TimeOut;
 	                    if (EnabledOut == 2) { factor *= 2; }
 
 	                    if (dist < TimeOut - 0.2)
 	                    {
-                            float n = nestedNoise(uv * 8.) * factor;
-                            float lerp = sin(0.2 + TimeOut / 2. * dist) / 2.0;
+                            float n = nestedNoise(uv * 8.0) * factor;
+                            float lerp = sin(0.2 + TimeOut / 2.0 * dist) / 2.0;
                             float offset = mix(0.0, 2.0, lerp);
-                            float s = 1;
-                            if (EnabledOut == 2) s = .01;
+                            float s = 1.0;
+                            if (EnabledOut == 2) s = 0.01;
                             offsetVector = normalize(s * (center - uv)) * (n * offset);
                         }
 
                         Color = texture2D(Texture0, uv);
-                        vec4 col = texture2D(Texture0, uv + offsetVector);
                         Color *= hue(Color, factor / 5.5) * 5.25;
-                        Color += col * 0.35;
+                        Color += texture2D(Texture0, uv + offsetVector) * 0.35;
                         if (InvertedOut == 1)
                         {
                             Color.rgb = vec3(mix(.65, .75, TimeOut)) - Color.rgb;
@@ -241,9 +237,9 @@
                     else if ((dist > TimeOut + 0.1) && EnabledOut == 2)
                     {
                         Color.rgb = vec3(
-                        mix(Color.r, (Color.r + Color.g + Color.b)/3., GreyScaleOut),
-                        mix(Color.g, (Color.r + Color.g + Color.b)/3., GreyScaleOut),
-                        mix(Color.b, (Color.r + Color.g + Color.b)/3., GreyScaleOut));
+                        mix(Color.r, (Color.r + Color.g + Color.b) / 3.0, GreyScaleOut),
+                        mix(Color.g, (Color.r + Color.g + Color.b) / 3.0, GreyScaleOut),
+                        mix(Color.b, (Color.r + Color.g + Color.b) / 3.0, GreyScaleOut));
                     }
                 }
                 gl_FragColor = Color0 * Color;
@@ -305,7 +301,7 @@
                 if (EnabledOut != 0)
                 {
                     vec2 center = PlayerPosOut;
-                    vec2 uv = gl_FragCoord / RenderDataOut.xy;
+                    vec2 uv = gl_FragCoord.xy / RenderDataOut.xy;
 
                     float ratio = RenderDataOut.y / RenderDataOut.x;
                     uv.y *= ratio;
@@ -316,14 +312,14 @@
                     if (dist > 0.1)
                     {
                         vec2 dir = (uv - center);
-                        Color = vec4(0.);
+                        Color = vec4(0.0);
 
-                        for (float i = 0; i < 64.; i++)
+                        for (float i = 0.0; i < 64.0; i++)
                         {
-                            Color += texture(Texture0, TexCoord0 +
-                            i / 64. * dir * StrengthOut * 0.005 * dist);
+                            Color += texture2D(Texture0, TexCoord0 +
+                                i / 64.0 * dir * StrengthOut * 0.005 * dist);
                         }
-                        Color /= 64.;
+                        Color /= 64.0;
                     }
                 }
                 gl_FragColor = Color0 * Color;
