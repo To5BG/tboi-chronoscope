@@ -560,8 +560,12 @@ function TimeStop:onUpdate()
                         end
                     end
                 elseif v.Type == EntityType.ENTITY_EFFECT then
-                    v:GetData().StoredVel = v.Velocity
-                    v.Velocity = Vector(0, 0)
+                    if v.Variant == EffectVariant.WATER_SPLASH or v.Variant == EffectVariant.BLOOD_DROP then
+                        v:Remove()
+                    else
+                        v:GetData().StoredVel = v.Velocity
+                        v.Velocity = Vector(0, 0)
+                    end
                 end
             end
         end
