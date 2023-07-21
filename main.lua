@@ -578,6 +578,13 @@ end
 
 function TimeStop:onShader(name)
     if name == "ZaWarudoClassic" then
+        if not useOldShader then
+            return {
+                Enabled = 0,
+                DistortionScale = 0,
+                DistortionOn = 0
+            }
+        end
 
         local dist = 10 / (maxTime - 12 - freezetime) -- transition factor
         local on = 0 -- dullness factor
@@ -586,25 +593,34 @@ function TimeStop:onShader(name)
         else
             on = 0.5 - 0.5 * math.max(outroTimeMarker - freezetime, 0) / outroTimeMarker
         end
-
         -- long windup
         if longWindup and maxTime - freezetime < 0 then
             dist = 0
         end
-
         return {
-            Enabled = useOldShader and 1 or 0,
+            Enabled = 1,
             DistortionScale = dist,
             DistortionOn = on
         }
 
     elseif name == "ZaWarudo" then
+        if useOldShader or freezetime == 0 then
+            return {
+                Enabled = 0,
+                Time = 0,
+                PlayerPos = { 0, 0 },
+                Thickness = 0,
+                GreyScale = 0,
+                Distort = 0,
+                Inverted = 0
+            }
+        end
+
         local pos = Isaac.WorldToScreen(Isaac.GetPlayer(playerID).Position)
         local diff = maxTime - freezetime
         local t = 0
         local gscale = freezetime == 0 and 0 or 0.7 -
                 0.45 * math.max(outroTimeMarker - freezetime, 0) / outroTimeMarker
-
         if freezetime == 0 or diff <= 5 then
             t = -10
             -- first wave
@@ -622,9 +638,8 @@ function TimeStop:onShader(name)
             shaderDisfactor =  math.random(4)
             shaderDisfactor = (shaderDisfactor <= 2) and (-1 * shaderDisfactor) or math.floor(shaderDisfactor / 2)
         end
-
         return {
-            Enabled = (not useOldShader and freezetime ~= 0 and diff > 0) and ((diff < 40) and 1 or 2) or 0,
+            Enabled = (diff < 40) and 1 or 2,
             Time = t,
             PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
             Thickness = t * 5.5,
@@ -635,26 +650,40 @@ function TimeStop:onShader(name)
 
     elseif name == "ZaWarudoBlur" then
         local diff = maxTime - freezetime
+        if useOldShader or freezetime == 0 or diff >= 60 or diff <= 10 then
+            return {
+                Enabled = 0,
+                PlayerPos = { 0, 0 },
+                Strength = 0,
+            }
+        end
+
         local pos = Isaac.WorldToScreen(Isaac.GetPlayer(playerID).Position)
         local s = 0
         if diff < 20 then s = diff * 3
         else s = math.max(0, 80 - diff) end
-
         return {
-            Enabled = (not useOldShader and freezetime ~= 0 and diff < 60 and diff > 10) and 1 or 0,
+            Enabled = 1,
             PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
             Strength = s
         }
 
     elseif name == "ZaWarudoZoom" then
         local diff = maxTime - freezetime
+        if useOldShader or freezetime == 0 or diff >= 60 then
+            return {
+                Enabled = 0,
+                PlayerPos = { 0, 0 },
+                Zoom = 0
+            }
+        end
+
         local pos = Isaac.WorldToScreen(Isaac.GetPlayer(playerID).Position)
         local z = 1
         if diff <= 12 and diff >= 8 then z = 1 - (diff - 7) * 0.03
         elseif diff > 12 and diff < 60 then z = 0.85 end
-
         return {
-            Enabled = (not useOldShader and freezetime ~= 0 and diff < 60) and 1 or 0,
+            Enabled = 1,
             PlayerPos = { pos.X / Isaac.GetScreenWidth(), pos.Y / Isaac.GetScreenHeight() },
             Zoom = z
         }
