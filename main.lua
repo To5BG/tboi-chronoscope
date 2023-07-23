@@ -495,7 +495,8 @@ function TimeStop:onUpdate()
                 if v.Type == EntityType.ENTITY_TEAR then
                     -- handling regular tears
                     local data = v:GetData()
-                    if not data.Frozen then
+                    if player:HasCollectible(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) then
+                    elseif not data.Frozen then
                         if v.Velocity.X ~= 0 or v.Velocity.Y ~= 0
                                 or not player:HasCollectible(CollectibleType.COLLECTIBLE_ANTI_GRAVITY) then
                             data.Frozen = true
