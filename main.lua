@@ -42,6 +42,7 @@ local voiceOver = false
 local useOldShader = false
 local invertColors = true
 local freezewoosh = true
+local familiarSetting = 0
 
 local outroTimeMarker = effectVariant == "Diego" and 60.0 or (effectVariant == "Dio" and 40.0 or 15.0)
 local longWindup = false
@@ -51,7 +52,6 @@ local playerID = 0
 local savedspikestates = { }
 ---------------------------------------------------------------------------
 ------------------------------HANDLERS-------------------------------------
-
 local startingSfxHandler = {
     ["Dio"] = function()
         if voiceOver then
@@ -201,7 +201,7 @@ if ModConfigMenu then
                     longWindup = false
                     SaveConfig()
                 end,
-                Info = { "Enables character voice overs." }
+                Info = { "Enables character voice overs (voice matches chosen sound effect)." }
             }
     )
     ModConfigMenu.AddSetting(
@@ -220,7 +220,31 @@ if ModConfigMenu then
                     freezewoosh = val
                     SaveConfig()
                 end,
-                Info = { "Freezes the 'woosh' effect from swing-type weapons, like The Forgotten's bone club or Magdalene's melee attack (purely visual)." }
+                Info = { "Freezes the 'woosh' effect from swing-type weapons, like The Forgotten's bone club " ..
+                    "or Magdalene's melee attack (purely visual)." }
+            }
+    )
+    ModConfigMenu.AddSetting(
+            "Updated Chronoscope",
+            "General",
+            {
+                Type = ModConfigMenu.OptionType.NUMBER,
+                CurrentSetting = function()
+                    return familiarSetting
+                end,
+                Minimum = 0,
+                Maximum = 2,
+                Display = function()
+                    local textval = familiarSetting == 0 and "All" or
+                        (familiarSetting == 1 and "Movement only" or "None")
+                    return "Freeze familiars: " .. textval
+                end,
+                OnChange = function(val)
+                    familiarSetting = val
+                    SaveConfig()
+                end,
+                Info = { "Changes the effect on familiars, except for Lilith and Incubus. " ..
+                    "Default: All (movement & shooting) are frozen." }
             }
     )
     ModConfigMenu.AddSetting(
@@ -242,7 +266,9 @@ if ModConfigMenu then
                     SaveConfig()
                     UpdateColor()
                 end,
-                Info = { "Changes time stop shader/visual effect. 'Realistic' variant refers to the JoJo-like visual effect in the anime/manga" }
+                Info = { "Changes time stop shader/visual effect. " ..
+                    "'Realistic': JoJo-like visual effect in the anime/manga. " ..
+                    "'Legacy': Shaders of original mod. " }
             }
     )
     ModConfigMenu.AddSetting(
@@ -262,7 +288,7 @@ if ModConfigMenu then
                     invertColors = val
                     SaveConfig()
                 end,
-                Info = { "Inverts the colors of the time stop effect (anime-like effect)." }
+                Info = { "Inverts the colors of the shader effect." }
             }
     )
 end
@@ -355,6 +381,13 @@ function TimeStop:onUpdate()
         savedspikestates = { }
         -- restore tear attributes
         for _, v in pairs(entities) do
+            if v.Type == EntityType.ENTITY_FAMILIAR then
+                v.Parent = player
+                if familiarVec[v.Index] then
+                    familiarHandler[familiarVec[v.Index][2]](v:ToFamiliar())
+                end
+                familiarVec[v.Index] = nil
+            end
             if v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                 v:ClearEntityFlags(EntityFlag.FLAG_FREEZE)
                 v:ClearEntityFlags(EntityFlag.FLAG_NO_SPRITE_UPDATE)
@@ -366,12 +399,6 @@ function TimeStop:onUpdate()
                 if v:GetData().LaserHit then
                     v:TakeDamage(player.Damage * v:GetData().LaserHit, DamageFlag.DAMAGE_LASER, EntityRef(player), 0)
                     v:GetData().LaserHit = nil
-                end
-                if v.Type == EntityType.ENTITY_FAMILIAR then
-                    v.Parent = player
-                    if familiarVec[v.Index] then
-                        familiarHandler[familiarVec[v.Index][2]](v:ToFamiliar())
-                    end
                 end
                 if v.Type == EntityType.ENTITY_TEAR then
                     local data = v:GetData()
@@ -405,11 +432,11 @@ function TimeStop:onUpdate()
         -- while on effect
         game.TimeCounter = savedtime
         for _, v in pairs(entities) do
-            if v.Type == EntityType.ENTITY_FAMILIAR and canShoot[playerID + 1] and
+            if v.Type == EntityType.ENTITY_FAMILIAR and familiarSetting ~= 2 and canShoot[playerID + 1] and
                     -- Tainted Lilith's fetus
                     v.Variant ~= FamiliarVariant.UMBILICAL_BABY then
                 local fam = v:ToFamiliar()
-                fam.FireCooldown = freezetime + 35
+                if familiarSetting == 0 then fam.FireCooldown = freezetime + 35 end
                 if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                     v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
                     local familiartype = fam.OrbitDistance:Length() ~= 0.0 and "orbital" or "follower"
@@ -452,7 +479,7 @@ function TimeStop:onUpdate()
             elseif v.Type == EntityType.ENTITY_EFFECT and (v.Variant == EffectVariant.FORGOTTEN_CHAIN or
                     v.Variant == EffectVariant.FORGOTTEN_SOUL or v.Variant == EffectVariant.HAEMO_TRAIL or
                             (v.Variant == EffectVariant.POOF02 and v.SubType == 10)) then
-            elseif v.Type ~= EntityType.ENTITY_PLAYER then
+            elseif v.Type ~= EntityType.ENTITY_PLAYER and v.Type ~= EntityType.ENTITY_FAMILIAR then
                 if v.Type ~= EntityType.ENTITY_PROJECTILE then
                     if not v:HasEntityFlags(EntityFlag.FLAG_FREEZE) then
                         v:AddEntityFlags(EntityFlag.FLAG_FREEZE)
@@ -781,13 +808,6 @@ function TimeStop:onPlayerInit(player)
     canShoot[TimeStop:GetID(player) + 1] = player:CanShoot()
 end
 
-function TimeStop:onTearInit(tear)
-    if freezetime >= 1 and tear.SpawnerType == EntityType.ENTITY_FAMILIAR and canShoot[playerID + 1] then
-        tear:Remove()
-    end
-end
-
-TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_INIT, TimeStop.onTearInit)
 TimeStop:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, TimeStop.onCacheEval)
 TimeStop:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, TimeStop.onGameExit)
 TimeStop:AddCallback(ModCallbacks.MC_POST_TEAR_UPDATE, TimeStop.onTearUpdate)
