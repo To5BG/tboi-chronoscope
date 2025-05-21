@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
     <name>Updated Chronoscope (ZA WARUDO) Dev</name>
-    <directory>zawarudo</directory>
+    <directory>tboi-chronoscope</directory>
     <id>2746615600</id>
     <description>Take control of the world with this amazing timeless item!
 
@@ -16,7 +16,7 @@ TODO for future releases: Fix familiars turning on player's turning direction (i
 Obviously, huge thanks to [b]Sora[/b] for the base code.
 
 [i][b][u]NOTE:[/u] You might get a black screen after starting a run. That is caused either by conflicting mods (only one I garnered from my own testing was the Job modpack, but there could be more), or if you are on an OS without native support (like Proton on Linux). In that case, reinstall the mod, or disable other mods that use shaders. As a last resort, you can just rename/delete the shader.xml for this mod (with the cost of effect immersion, of course...)[/b][/i]</description>
-    <version>2.4</version>
+    <version>2.5</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Active Items"/>
